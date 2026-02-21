@@ -1,0 +1,5 @@
+ai_brain/
+__pycache__/
+.venv/
+*.db
+.env
