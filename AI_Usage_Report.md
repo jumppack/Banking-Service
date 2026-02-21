@@ -96,3 +96,78 @@ We are pausing to perform an architectural audit before moving to Phase 2.
 ```
 **Resulting AI Action:** The agent output the directory tree and the contents of the database files, confirming successful setup of `aiosqlite` and the `Integer` override for the `balance` field.
 **Human Review & Intervention:** The agent issued a warning that the `currency` field itself was still a string (`Mapped[str]`) and suggested changing it to an integer. I manually rejected this suggestion to strictly adhere to the ISO 4217 3-letter string standard (e.g., "USD", "EUR") which is the industry best practice for JSON API payloads.
+
+---
+---
+
+### Phase 2: Core Business Logic & Atomic Transfers
+
+**Phase Objective:** Define strict Pydantic DTO schemas and implement the isolated Service Layer for atomic money transfers.
+
+---
+
+#### 📄 Iteration 1: Service Layer Architecture & Transaction Scoping
+**Objective:** Design the business logic for `transfer_funds` ensuring ACID compliance and proper validation.
+
+**The Prompt:**
+```text
+@Workspace /plan
+
+<system_constraints>
+- Role: Senior Backend Architect.
+- Tech Stack: Python 3.12+, FastAPI, SQLAlchemy 2.0 (Async), Pydantic v2.
+- Strict Rule 1: DO NOT write any code or create files yet. Generate an `Implementation Plan` artifact first.
+- Strict Rule 2: Business logic MUST be isolated in an `app/services/` layer and must NOT be tightly coupled to the FastAPI routers.
+- Strict Rule 3: The Money Transfer operation MUST utilize explicit asynchronous database transaction blocks (`await session.commit()` and `await session.rollback()`) to guarantee atomicity.
+</system_constraints>
+
+<context>
+We are moving to Phase 2 of the production-ready Banking REST Service. 
+The objective is to define the Pydantic DTO schemas for strict data validation and implement the core business logic (Service Layer) for handling accounts and money transfers.
+</context>
+
+<execution_steps>
+1. **Schema Design (`app/schemas/`):** Define the Pydantic v2 schemas for `User`, `Account`, and `Transaction`. Ensure you have separate schemas for input creation (e.g., `AccountCreate`) and output responses (e.g., `AccountResponse` utilizing `model_config = ConfigDict(from_attributes=True)`).
+2. **Service Layer Design (`app/services/`):** - Outline an `AccountService` for basic ledger queries.
+   - Outline a `TransferService` with an async method `transfer_funds(from_account_id: UUID, to_account_id: UUID, amount: int, session: AsyncSession)`.
+   - Explicitly detail the logical flow of `transfer_funds`: How it will check sufficient balances, update both account balances, create two offsetting `Transaction` records (one debit, one credit), and safely wrap everything in a try/except block with rollback.
+3. **Artifact Generation:** Produce the `Implementation Plan` detailing the Pydantic fields and the exact pseudocode or logical flow of the `transfer_funds` service.
+</execution_steps>
+```
+**Resulting AI Action:** The agent produced an implementation plan with the requested ACID transaction block (`session.commit()` and `session.rollback()`). However, it incorrectly attempted to use PostgreSQL row-level locking (`.with_for_update()`) on an SQLite database, missed `.scalar_one_or_none()` syntax, and omitted negative amount validations.
+**Human Review & Intervention:** I rejected the plan. I instructed the agent to remove the incompatible locking mechanism, correct the SQLAlchemy 2.0 syntax, and implement strict validations for negative amounts and same-account transfers.
+
+**The Prompt:**
+```text
+@Workspace
+
+I am rejecting this Implementation Plan. You have made a few critical errors regarding SQLite compatibility and SQLAlchemy 2.0 syntax, as well as missing some basic financial validations.
+
+**Required Plan Modifications:**
+
+1. **SQLite Compatibility:** Remove `.with_for_update()`. SQLite does not support row-level locking. Rely on standard transaction isolation for this MVP.
+2. **SQLAlchemy Syntax:** `await session.execute(select(...))` returns a Result object, not the model. You MUST append `.scalar_one_or_none()` to extract the actual `Account` object before checking balances.
+3. **Business Validations:** At the very top of `transfer_funds`, add validation checks to raise a ValueError if:
+   - `amount <= 0` (Transfers must be strictly positive).
+   - `from_account_id == to_account_id` (Cannot transfer to the same account).
+4. **Error Handling:** If either account is not found (`None`), raise a ValueError("Account not found") before attempting to check balances.
+
+**Action:** Update the Implementation Plan to reflect these changes. Once updated, you have my approval to **EXECUTE** the plan and generate the actual Python files in `app/schemas/` and `app/services/`.
+```
+
+
+#### 📄 Iteration 2: Architectural Audit & Verification (Phase 2)
+**Objective:** Audit the generated Python code to ensure strict ACID transaction compliance and SQLite compatibility before building the external API layer.
+
+**The Prompt:**
+```text
+@Workspace
+
+We are pausing to perform an architectural audit of Phase 2 before moving to Phase 3. 
+
+**Action:** Please read the files you just generated and provide the following for my review:
+1. **Transfer Logic:** Print the exact, complete code for the `transfer_funds` method inside `app/services/transfer_service.py`. I need to verify the `try/except` block, the SQLAlchemy `.scalar_one_or_none()` syntax, and the rollback mechanism.
+2. **Schema Verification:** Print the exact code for the `AccountResponse` class in `app/schemas/account.py`. I need to verify that Pydantic v2 `ConfigDict(from_attributes=True)` was implemented correctly for ORM parsing.
+```
+**Resulting AI Action:** The agent retrieved the exact implementation of the `transfer_funds` method and `AccountResponse` schema. The code correctly utilized `.scalar_one_or_none()` and implemented a robust `try...except` block with explicit `await session.rollback()`.
+**Human Review & Intervention:** I manually reviewed the business logic and verified that all guardrails (preventing negative transfers, preventing same-account transfers, and ensuring atomicity) were securely in place. The core logic is certified production-ready, allowing us to safely proceed to the API routing phase.
