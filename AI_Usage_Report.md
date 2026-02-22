@@ -171,3 +171,61 @@ We are pausing to perform an architectural audit of Phase 2 before moving to Pha
 ```
 **Resulting AI Action:** The agent retrieved the exact implementation of the `transfer_funds` method and `AccountResponse` schema. The code correctly utilized `.scalar_one_or_none()` and implemented a robust `try...except` block with explicit `await session.rollback()`.
 **Human Review & Intervention:** I manually reviewed the business logic and verified that all guardrails (preventing negative transfers, preventing same-account transfers, and ensuring atomicity) were securely in place. The core logic is certified production-ready, allowing us to safely proceed to the API routing phase.
+
+---
+---
+
+### Phase 3: The API Layer & JWT Authentication
+
+**Phase Objective:** Implement secure JWT authentication and expose the core business logic via strictly isolated FastAPI routers.
+
+---
+
+#### 📄 Iteration 1: Security Architecture & API Routing Scope
+**Objective:** Design the JWT security dependency and map the required service endpoints to FastAPI routers.
+
+**The Prompt:**
+```text
+@Workspace /plan
+
+<system_constraints>
+- Role: Senior Backend Architect.
+- Tech Stack: Python 3.12+, FastAPI, passlib (bcrypt), PyJWT.
+- Strict Rule 1: DO NOT write any code or create files yet. Generate an `Implementation Plan` artifact first.
+- Strict Rule 2: Ensure strictly typed FastAPI Dependency Injection (`Depends`) is used for database sessions and the `get_current_user` security mechanism.
+- Strict Rule 3: Do NOT put all endpoints in `main.py`. Use `APIRouter` to maintain domain segregation in `app/api/routers/`.
+</system_constraints>
+
+<context>
+We are moving to Phase 3 of the Banking REST Service. 
+The objective is to implement the Security layer (JWT Authentication) and wire up the FastAPI routers to expose the Services built in Phase 2.
+</context>
+
+<execution_steps>
+1. **Security Layer (`app/core/security.py`):** Outline the setup for password hashing (e.g., passlib with bcrypt) and JWT token generation/decoding using `PyJWT`. Define a `get_current_user` FastAPI dependency that extracts the user ID from the JWT.
+2. **Auth Router (`app/api/routers/auth.py`):** Outline the `/signup` endpoint (creating a User) and the `/login` endpoint (returning an access token using FastAPI's `OAuth2PasswordRequestForm`).
+3. **Business Routers (`app/api/routers/accounts.py` & `transfers.py`):** Detail how you will use `APIRouter` to expose endpoints like `POST /accounts/`, `GET /accounts/{id}`, and `POST /transfers/`. Explicitly state how `get_current_user` will be injected to ensure users can only access their own accounts.
+4. **Main Application (`app/main.py`):** Outline the initialization of the FastAPI app and the inclusion of these routers.
+5. **Artifact Generation:** Produce the `Implementation Plan` detailing this exact routing and security structure.
+</execution_steps>
+```
+**Resulting AI Action:** The agent correctly implemented the `OAuth2PasswordBearer` dependency and perfectly scoped the IDOR protection logic (verifying `account.user_id == current_user.id`). However, it missed several key deliverables from the original specification (Cards, Statements, and Transaction history).
+**Human Review & Intervention:** I approved the security logic but rejected the scope. I instructed the agent to expand the routing plan to include the missing `/cards`, `/transactions`, and `/statements` endpoints before authorizing code generation.
+
+**The Prompt:**
+```text
+@Workspace
+
+This Implementation Plan is excellent in terms of security. The authorization check ensuring `from_account.user_id == current_user.id` is exactly what I was looking for to prevent IDOR vulnerabilities. 
+
+However, to fully satisfy the project requirements, we need to expose the remaining service interfaces.
+
+**Required Plan Modifications:**
+1. **Missing Endpoints:** Add router outlines for the following required features to your Business Routers section:
+   - `Transactions`: Endpoint to get the transaction ledger for an account (e.g., `GET /accounts/{id}/transactions`). Ensure it verifies account ownership.
+   - `Cards`: Endpoints to issue a debit/credit card to an account (`POST /cards/`) and view user cards (`GET /cards/`). Must enforce that the user owns the associated account.
+   - `Statements`: An endpoint to generate or retrieve a monthly statement summary for an account (e.g., `GET /accounts/{id}/statement`).
+2. **AI Usage Report:** Do not forget to log this intervention.
+
+**Action:** Update the Implementation Plan to include these missing endpoints. Once updated, you have my approval to **EXECUTE** the plan and generate all the Phase 3 security and router files, and wire them into `main.py`.
+```
