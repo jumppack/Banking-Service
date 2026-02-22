@@ -229,3 +229,20 @@ However, to fully satisfy the project requirements, we need to expose the remain
 
 **Action:** Update the Implementation Plan to include these missing endpoints. Once updated, you have my approval to **EXECUTE** the plan and generate all the Phase 3 security and router files, and wire them into `main.py`.
 ```
+
+#### 📄 Iteration 2: Architectural Audit & Verification (Phase 3)
+**Objective:** Verify the JWT security implementation and IDOR (Insecure Direct Object Reference) protections in the generated API routers before local execution.
+
+**The Prompt:**
+```text
+@Workspace
+
+We are pausing to perform an architectural audit of Phase 3 before moving on. I need to verify the security implementations and router wiring.
+
+**Action:** Please read the files you just generated and provide the exact code for the following:
+1. **The Security Dependency:** Print the `get_current_user` function from `app/core/security.py`. I need to verify how the JWT is decoded and how the user is fetched.
+2. **The IDOR Protection:** Print the `create_transfer` (or equivalent POST) endpoint from `app/api/routers/transfers.py`. I must verify the exact line of code that checks `from_account.user_id == current_user.id` before the `TransferService` is called.
+3. **The Application Entrypoint:** Print the `app/main.py` file to verify that all 6 routers (auth, accounts, transfers, transactions, cards, statements) are successfully included in the FastAPI app instance.
+```
+**Resulting AI Action:** The agent output the requested security functions and endpoint logic. The `get_current_user` dependency correctly decodes the JWT and queries the active user. The `create_transfer` endpoint explicitly enforces `from_account.user_id == current_user.id` prior to invoking the transactional service layer. All six required domain routers were successfully registered in `main.py`.
+**Human Review & Intervention:** I manually audited the authentication flow and IDOR guardrails. The security implementation meets production standards, ensuring users cannot access or transfer funds from unauthorized accounts. The backend is now cleared for local execution and frontend integration.
