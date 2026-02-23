@@ -1,0 +1,29 @@
+# Python overrides
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Testing
+.pytest_cache/
+tests/
+tests/coverage/
+.coverage*
+htmlcov/
+
+# Git
+.git/
+.gitignore
+
+# Project Specific
+data/
+*.db
+ai_brain/
+AI_Usage_Report.md

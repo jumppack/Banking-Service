@@ -296,3 +296,174 @@ Implement these refinements directly in the code and provide a brief summary of 
 ```
 **Resulting AI Action:** The agent audited the list-based endpoints (transactions, cards) and successfully implemented `limit` and `offset` pagination to prevent payload overloading. It also standardized the try/except blocks across the routers to ensure consistent JSON error shapes.
 **Human Review & Intervention:** I reviewed the pagination implementation to ensure default limits were reasonable (100) and that the database queries correctly utilized SQLAlchemy's `.limit()` and `.offset()` methods. The API is now highly resilient and ready for the next phase.
+
+#### 📄 Iteration 4: Async Database Migration & State Management (Phase 3)
+**Objective:** Configure Alembic for asynchronous SQLAlchemy execution and apply the initial schema to the SQLite database.
+
+**The Prompt:**
+```text
+@Workspace
+
+We are ready to bring the database to life. I need you to configure Alembic, generate the initial migration, and apply it to create our SQLite database tables.
+
+**Action:**
+1. **Configure `alembic.ini`:** Ensure the SQLAlchemy URL is correctly pointing to our local async SQLite database (e.g., `sqlalchemy.url = sqlite+aiosqlite:///./banking.db`).
+2. **Configure `alembic/env.py`:** Update the environment file to import our SQLAlchemy `Base` and all of our models (`User`, `Account`, `Transaction`, etc.) so Alembic can detect them. Set `target_metadata = Base.metadata`. Make sure it is configured for async execution if necessary.
+3. **Execute Migration Generation:** Run the terminal command to generate the migration script: `alembic revision --autogenerate -m "initial_schema"`
+4. **Execute Migration Upgrade:** Run the terminal command to apply the schema to the database: `alembic upgrade head`
+
+**Output:** Please execute these steps, automatically fix any import/configuration errors that arise during the `autogenerate` process, and confirm once the `.db` file has been successfully created with all our tables.
+```
+**Resulting AI Action:** The agent correctly configured `alembic.ini` and `env.py` for async execution via `create_async_engine`. It identified a missing dependency (`greenlet`) required for async Alembic operations, installed it, updated `requirements.txt`, and successfully generated and applied the initial migration to create `banking.db`.
+**Human Review & Intervention:** I verified that the database file was successfully created in the root directory and that the schema changes were securely tracked in version control before starting the local server for end-to-end manual testing.
+
+#### 📄 Iteration 5: Repository Hygiene & Security (Phase 3)
+**Objective:** Enforce industry-standard project organization by removing generated database artifacts from the project root and securing version control.
+
+**The Prompt:**
+```text
+@Workspace
+
+The user correctly pointed out that leaving `banking.db` in the project root is bad practice. We need to reorganize the workspace to meet industry standards.
+
+**Action:**
+1. **Create Directory:** Create a new directory at the root level called `data/`.
+2. **Move Database:** Move `banking.db` into the `data/` directory.
+3. **Update Connections:** - Update `alembic.ini` to point to the new location (e.g., `sqlalchemy.url = sqlite+aiosqlite:///./data/banking.db`).
+   - Update the application's database connection string (likely in `app/db/session.py` or `app/core/config.py`) to point to `sqlite+aiosqlite:///./data/banking.db`.
+4. **Secure Version Control:** Check the `.gitignore` file. Ensure that `data/` and `*.db` are explicitly ignored so we never commit local database files to the repository.
+5. **Verify:** Run a quick python script to connect to `./data/banking.db` to ensure the application can still successfully reach the tables.
+
+Execute this reorganization and confirm once the app is successfully re-wired to the new data directory.
+```
+**Resulting AI Action:** The agent created a `data/` directory, migrated the `banking.db` file, and successfully updated the connection strings in both `alembic.ini` and the application's session configuration. It also updated the `.gitignore` to strictly exclude the `data/` directory.
+**Human Review & Intervention:** I initiated this reorganization because the AI initially placed the `.db` file in the project root. Leaving data artifacts in the root is an anti-pattern that clutters the workspace and risks accidental commits of sensitive database files. The project structure is now secure and clean.
+
+---
+---
+
+### Phase 4: Testing, Observability, & Advanced Health Checks
+
+**Phase Objective:** Fulfill the strict requirements for comprehensive test coverage, structured logging, and robust lifecycle management before containerization.
+
+---
+
+#### 📄 Iteration 1: Test Architecture & Observability Planning
+**Objective:** Design a test suite that isolates database state and implement structured JSON logging for production monitoring.
+
+**The Prompt:**
+```text
+@Workspace
+
+We need to perform a strict gap analysis of the current codebase against our project requirements. Do not write any code yet. Just audit the workspace and confirm what is missing.
+
+**Context: The Missing Requirements**
+1. **Test Suite:** We need comprehensive test coverage, including unit tests for business logic (`app/services/`) and integration tests for API endpoints (`app/api/routers/`).
+2. **Logging & Monitoring:** We need structured logging (JSON format preferred), defined log levels, and error tracking.
+3. **Health Checks:** We need a robust `/health` endpoint that performs database connectivity checks and service readiness probes. We also need graceful shutdown handling in the FastAPI lifecycle.
+4. **Containerization:** We need a `Dockerfile` and `docker-compose.yml`.
+
+**Action:**
+1. Scan the repository and confirm the absence of these four components.
+2. Generate an `Implementation Plan` for Phase 4, focusing strictly on fulfilling **Test Suite**, **Logging**, and **Advanced Health Checks**. Leave Containerization for Phase 5.
+3. In the plan, outline the exact folder structure for the tests (e.g., `tests/unit/`, `tests/integration/`) and how you will configure `pytest` with `pytest-asyncio` to test our async database sessions.
+```
+**Resulting AI Action:** The agent correctly identified the missing components and drafted an implementation plan. The plan proposed `pytest` with an in-memory SQLite database (`sqlite+aiosqlite:///:memory:`) for strict test isolation, `python-json-logger` for structured observability, and FastAPI `@asynccontextmanager` for graceful database connection pooling and teardown.
+**Human Review & Intervention:** I audited the proposed architecture. The use of an in-memory database for testing prevents side effects on the local development database, which is a senior-level best practice. I approved the plan for execution without modification.
+
+#### 📄 Iteration 2: Test Scope Refinement & Execution (Phase 4)
+**Objective:** Approve the Phase 4 architecture while enforcing comprehensive integration test coverage across all domain routers.
+
+**The Prompt:**
+*(I provided a prompt approving the in-memory database and JSON logging strategy, but explicitly instructed the agent to expand its test generation to include `test_accounts.py`, `test_transactions.py`, `test_cards.py`, and `test_statements.py` to ensure full coverage).*
+
+**Resulting AI Action:** The agent installed the testing dependencies, scaffolded the `conftest.py` fixtures, and generated the comprehensive test suite spanning both the `services/` and `routers/` layers. It also implemented the JSON logging middleware and the deep `/health` database probe.
+**Human Review & Intervention:** I manually audited the AI's implementation plan before allowing it to write code. I noticed the AI had minimized the integration testing scope to just Auth and Transfers. I intervened to force the generation of tests for all remaining endpoints, ensuring compliance with the assessment's strict testing requirements.
+
+#### 📄 Iteration 3: Test Coverage & Negative Scenario Auditing (Phase 4)
+**Objective:** Move beyond "happy path" testing by enforcing strict code coverage metrics and explicitly testing negative/boundary edge cases.
+
+**The Prompt:**
+```text
+@Workspace
+
+The user correctly pointed out that a 100% pass rate does not mean the test suite is sufficient. We need to ensure we are heavily testing "sad paths" and negative scenarios, not just "happy paths."
+
+**Action:**
+1. **Coverage Analysis:** - Install `pytest-cov` and update `requirements.txt`.
+   - Run the test suite with coverage: `pytest --cov=app tests/`
+   - Report the total coverage percentage. Identify which files in `app/services/` or `app/api/routers/` have the lowest coverage.
+2. **Negative Scenario Audit:** Review the existing tests in `tests/` and explicitly tell me if we are currently testing the following negative scenarios:
+   - Transferring a negative amount (e.g., -$100).
+   - Transferring exactly $0.
+   - Accessing endpoints with an invalid or expired JWT token.
+   - Attempting to fetch a paginated list with an absurdly high `limit` (e.g., limit=100000).
+3. **Execution:** If any of the above negative scenarios are missing, write the tests for them now, add them to the suite, and re-run the coverage report.
+
+**Output:** Provide the coverage report summary before and after your additions, and list the exact negative tests you added.
+```
+**Resulting AI Action:** The AI installed `pytest-cov` and generated a coverage report. The audit revealed that while IDOR and insufficient funds were tested, boundary attacks (negative transfer amounts, zero amounts) and malformed JWT scenarios were missing. The agent generated the missing negative tests and re-ran the suite.
+**Human Review & Intervention:** I initiated this audit because AI agents natively default to writing "happy path" tests. By forcing a coverage report and explicitly injecting boundary-value testing parameters, I ensured the suite evaluates the API's resilience against malicious or malformed client payloads.
+
+#### 📄 Iteration 4: Test Suite Restructuring & Final Audit (Phase 4)
+**Objective:** Improve repository hygiene by managing coverage artifacts, applying industry-standard naming conventions to the test directories, and performing a final gap analysis on test coverage.
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I directed the AI to move the default `.coverage` artifact out of the project root and configure it to output to a dedicated, git-ignored `tests/coverage/` directory. I also instructed the AI to rename `tests/integration/` to `tests/api/` for clearer domain boundary separation, and forced a final exhaustive mapping of all endpoints and services to ensure no edge cases were left untested.
+
+**Resulting AI Action:** The agent configured `pytest.ini` to manage the coverage output, renamed the integration directory to `tests/api/`, and re-ran the coverage suite to verify all positive and negative permutations for the routers and services were accounted for.
+**Human Review & Intervention:** I initiated this because default testing tools often clutter the root directory. Clean workspace management and explicit folder naming (`tests/api/` instead of generic `integration/`) demonstrate a mature approach to maintainable project architecture.
+
+### Phase 5: Containerization & Deployment Architecture
+
+**Phase Objective:** Package the application into an isolated, reproducible environment using Docker, fulfilling the core containerization requirements and securing the multi-stage build bonus points.
+
+---
+
+#### 📄 Iteration 1: Multi-Stage Dockerfile & Compose Setup
+**Objective:** Generate a secure, optimized Dockerfile and a docker-compose configuration for local development.
+
+**The Prompt:**
+```text
+@Workspace
+
+We have successfully completed Phase 4. Our test suite passes perfectly. We are now moving to Phase 5: Containerization.
+
+**Context: Assessment Requirements**
+We must implement a Dockerfile, a docker-compose.yml, environment variable configuration, and secure the "Bonus Points" for using a multi-stage build.
+
+**Action:**
+1. **`Dockerfile`**: Create a multi-stage Dockerfile. 
+   - **Stage 1 (Builder):** Use an official Python 3.12 slim image. Install build dependencies, copy `requirements.txt`, and install the Python packages into a virtual environment or specific directory.
+   - **Stage 2 (Runner):** Use a clean Python 3.12 slim image. Copy the built dependencies from Stage 1. Copy the `app/` directory. Expose port 8000. Set the `CMD` to run the uvicorn server.
+2. **`.dockerignore`**: Create this file to explicitly exclude `.venv`, `__pycache__`, `tests/`, `data/`, and `.git/` to keep the image lean.
+3. **`docker-compose.yml`**: Create a compose file defining the `api` service. Map port 8000 to 8000. Inject environment variables (e.g., `DATABASE_URL=sqlite+aiosqlite:///./data/banking.db`). Map a volume for the `./data` directory so the SQLite database persists across container restarts.
+
+**Output:** Generate these three files and provide a summary of your implementation.
+```
+**Resulting AI Action:** The agent correctly generated a multi-stage `Dockerfile` utilizing `python:3.12-slim`, effectively separating the build dependencies from the final runtime image to secure the multi-stage build bonus point. It also produced the `.dockerignore` and `docker-compose.yml` with the requested volume mappings and environment variables.
+
+---
+
+#### 📄 Iteration 2: Docker Verification & Execution
+**Objective:** Execute the generated containerization strategy to ensure environment reproducibility.
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I directed the AI to generate the multi-stage `Dockerfile`, `.dockerignore`, and `docker-compose.yml`. I specifically enforced strict volume mapping for the SQLite database (`./data:/app/data`) to ensure data persistence across container lifecycles, and excluded coverage artifacts from the build context.
+
+**Resulting AI Action:** The agent successfully generated the Docker configuration files, utilizing `python:3.12-slim` for both the builder and runner stages. It properly configured `PYTHONDONTWRITEBYTECODE=1` and exposed port 8000.
+**Human Review & Intervention:** I manually reviewed the `.dockerignore` to ensure sensitive/unnecessary directories (`.git/`, `tests/`) were excluded. I then ran `docker-compose up --build` to verify the image compiled successfully and the FastAPI application booted correctly within the isolated container. 
+
+---
+
+#### 📄 Iteration 3: Container Lifecycle & Automated Migrations
+**Objective:** Audit the Docker configurations and fix a critical database state bug in the container startup sequence.
+
+**The Prompt:**
+```text
+@Workspace
+
+The `Dockerfile` and `docker-compose.yml` are architecturally very strong, but I caught a critical flaw in the container lifecycle. 
+
+**The Issue:**
+The `CMD` in the Dockerfile only starts the `uvicorn` server. If
