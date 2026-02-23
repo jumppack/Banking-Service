@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
@@ -12,4 +13,4 @@ class Transaction(Base):
     amount: Mapped[int]
     type: Mapped[str]
     timestamp: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
-    related_account_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    related_account_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("accounts.id"), nullable=True)
