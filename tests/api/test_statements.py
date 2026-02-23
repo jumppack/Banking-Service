@@ -16,3 +16,14 @@ async def test_get_statement(client):
     assert stmt_data["account_id"] == acc_id
     assert "starting_balance" in stmt_data
     assert stmt_data["transaction_count"] == 0
+
+@pytest.mark.asyncio
+async def test_get_statement_unauthorized(client):
+    await client.post("/auth/signup", json={"email": "stmt_fail@test.com", "password": "pw"})
+    login_res = await client.post("/auth/login", data={"username": "stmt_fail@test.com", "password": "pw"})
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    import uuid
+    stmt_res = await client.get(f"/accounts/{uuid.uuid4()}/statement/", headers=headers)
+    assert stmt_res.status_code == 404

@@ -4,3 +4,5 @@ __pycache__/
 *.db
 .env
 data/
+tests/coverage/
+.coverage*

@@ -18,3 +18,14 @@ async def test_create_and_get_cards(client):
     assert get_cards_res.status_code == 200
     assert len(get_cards_res.json()) > 0
     assert get_cards_res.json()[0]["account_id"] == acc_id
+
+@pytest.mark.asyncio
+async def test_create_card_invalid_account(client):
+    await client.post("/auth/signup", json={"email": "card_fail@test.com", "password": "pw"})
+    login_res = await client.post("/auth/login", data={"username": "card_fail@test.com", "password": "pw"})
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    import uuid
+    card_res = await client.post("/cards/", headers=headers, json={"account_id": str(uuid.uuid4())})
+    assert card_res.status_code == 404

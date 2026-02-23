@@ -43,6 +43,18 @@ async def test_transfer_insufficient_funds(session):
         await TransferService.transfer_funds(acc1.id, acc2.id, 2000, session)
 
 @pytest.mark.asyncio
+async def test_transfer_negative_amount(session):
+    import uuid
+    with pytest.raises(ValueError, match="Transfer amount must be strictly positive"):
+        await TransferService.transfer_funds(uuid.uuid4(), uuid.uuid4(), -1000, session)
+
+@pytest.mark.asyncio
+async def test_transfer_zero_amount(session):
+    import uuid
+    with pytest.raises(ValueError, match="Transfer amount must be strictly positive"):
+        await TransferService.transfer_funds(uuid.uuid4(), uuid.uuid4(), 0, session)
+
+@pytest.mark.asyncio
 async def test_transfer_same_account(session):
     user = User(email="same@transfers.com", hashed_password="pw")
     session.add(user)

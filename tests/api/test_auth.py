@@ -36,3 +36,31 @@ async def test_login_wrong_password(client):
         data={"username": "wrongpass@test.com", "password": "badpassword"}
     )
     assert login_response.status_code == 401
+
+@pytest.mark.asyncio
+async def test_access_with_invalid_jwt(client):
+    headers = {"Authorization": "Bearer invalid.token.value"}
+    import uuid
+    random_id = uuid.uuid4()
+    # Try fetching a protected route
+    response = await client.get(f"/accounts/{random_id}", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Could not validate credentials"
+
+@pytest.mark.asyncio
+async def test_access_with_expired_jwt(client):
+    import jwt
+    from datetime import datetime, timedelta, timezone
+    from app.core.security import SECRET_KEY, ALGORITHM
+    
+    # Create an artificially expired token
+    expire = datetime.now(timezone.utc) - timedelta(minutes=15)
+    to_encode = {"sub": "expired_user", "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    headers = {"Authorization": f"Bearer {encoded_jwt}"}
+    import uuid
+    random_id = uuid.uuid4()
+    response = await client.get(f"/accounts/{random_id}", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Could not validate credentials"
