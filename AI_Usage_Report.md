@@ -467,3 +467,13 @@ The `Dockerfile` and `docker-compose.yml` are architecturally very strong, but I
 
 **The Issue:**
 The `CMD` in the Dockerfile only starts the `uvicorn` server. If
+
+#### 📄 Iteration 4: End-to-End Manual QA & Validation (Phase 5)
+**Objective:** Perform manual, in-container testing to verify data persistence, authentication state, and business logic validation boundaries.
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I executed a strict manual QA protocol via the Swagger UI (`http://localhost:8000/docs`) against the running Docker container. 
+1. **Persistence & Auth:** I created a user, destroyed the container (`docker-compose down`), rebooted it, and successfully authenticated, proving the `./data` volume mapping was flawless.
+2. **Validation Funnel:** I tested the transaction endpoints by attempting to transfer funds to a non-existent account (yielding a proper `404 Account Not Found`), and then attempting an overdraft transfer to a valid account (yielding a proper `400 Insufficient Funds`).
+
+**Human Review & Intervention:** This manual intervention was critical to verify that the theoretical Pytest coverage translated perfectly into the live containerized environment. The backend successfully defended against malformed state and unauthorized overdrafts.
