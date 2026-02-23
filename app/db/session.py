@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-DATABASE_URL = "sqlite+aiosqlite:///./banking.db"
+DATABASE_URL = "sqlite+aiosqlite:///./data/banking.db"
 
 engine = create_async_engine(
     DATABASE_URL,
