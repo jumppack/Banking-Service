@@ -16,6 +16,14 @@ app.include_router(transactions.router)
 app.include_router(cards.router)
 app.include_router(statements.router)
 
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to the Banking REST Service API",
+        "docs_url": "/docs",
+        "health_check": "/health"
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
