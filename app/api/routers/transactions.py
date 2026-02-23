@@ -14,8 +14,9 @@ from app.services.account_service import AccountService
 router = APIRouter(prefix="/accounts/{account_id}/transactions", tags=["transactions"])
 
 @router.get("/", response_model=List[TransactionResponse])
-async def get_transactions(
     account_id: uuid.UUID,
+    limit: int = 100,
+    offset: int = 0,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
@@ -29,5 +30,8 @@ async def get_transactions(
     if account.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view transactions for this account")
         
-    transactions = await AccountService.get_transactions(session, account_id)
-    return transactions
+    try:
+        transactions = await AccountService.get_transactions(session, account_id, limit, offset)
+        return transactions
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

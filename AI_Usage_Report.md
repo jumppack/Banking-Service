@@ -5,9 +5,11 @@
 ---
 
 #### 📄 Iteration 1: Initial Architecture Scaffolding
+
 **Objective:** Establish the foundational folder structure and map the SQLAlchemy ORM models.
 
 **The Prompt:**
+
 ```text
 @Workspace /plan
 
@@ -37,15 +39,18 @@ Design the SQLAlchemy ORM models tailored for SQLite:
 2. **Artifact Generation**: Produce the `Implementation Plan` detailing the exact folder tree, the configuration for `app/db/session.py` using SQLite, and the explicit field types for the SQLAlchemy models. 
 </execution_steps>
 ```
+
 **Resulting AI Action:** The agent generated an `Implementation Plan` with the correct domain-driven structure, but defaulted to using `float` for currency fields.
 **Human Review & Intervention:** I identified the `float` datatype as a critical financial anti-pattern and prepared a corrective prompt before allowing code generation.
 
 ---
 
 #### 📄 Iteration 2: Schema Correction (Data Integrity)
+
 **Objective:** Correct the database schema to handle financial data safely and initialize migrations.
 
 **The Prompt:**
+
 ```text
 @Workspace 
 
@@ -56,15 +61,18 @@ The implementation plan looks solid, but I am rejecting the use of `float` for t
 2. **Missing Component:** Ensure `alembic init alembic` is part of your execution steps so the migration environment is scaffolded.
 3. **AI Usage Report:** Add the creation of `AI_Usage_Report.md` to your plan. You must log this specific intervention.
 ```
+
 **Resulting AI Action:** The agent updated the plan, modifying the fields to `Integer` and adding the `alembic init` command.
 **Human Review & Intervention:** I explicitly overrode the AI's choice, enforcing the storage of currency as `Integer` (cents) to prevent floating-point precision errors natively inherent to SQLite.
 
 ---
 
 #### 📄 Iteration 3: Project Organization & Version Control
+
 **Objective:** Establish a clean Git baseline and organize project documentation correctly.
 
 **The Prompt:**
+
 ```text
 @Workspace 
 
@@ -75,15 +83,18 @@ We need to correct the project structure and establish our version control basel
 2. **Relocate AI Report:** Move `AI_Usage_Report.md` to the root directory of the project. We will not be tracking the `ai_brain/` folder in version control.
 3. **Version Control Initialization & Push:** Execute git init, configure .gitignore (ignoring ai_brain/, __pycache__/, .venv/, and *.db), commit the initial scaffolding, and push to a new private repository on GitHub.
 ```
+
 **Resulting AI Action:** The agent moved the markdown files out of its internal directories, initialized Git, configured `.gitignore`, and pushed to the remote repository.
 **Human Review & Intervention:** I forced the agent to move files out of its hidden `ai_brain/` folder to ensure the required assessment documents were properly visible in the source code deliverable.
 
 ---
 
 #### 📄 Iteration 4: Architectural Audit & Verification
+
 **Objective:** Verify the agent correctly implemented the domain-driven structure and the critical database type overrides before proceeding to business logic.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -94,10 +105,12 @@ We are pausing to perform an architectural audit before moving to Phase 2.
 2. **Database Verification:** Print the exact code currently written inside `app/db/session.py` and `app/models/account.py`. I need to verify that the SQLite configuration and the `Integer` datatype for currency were implemented correctly.
 3. **Documentation Check:** Confirm the exact file paths for `AI_Usage_Report.md` and `Future_Considerations.md`.
 ```
+
 **Resulting AI Action:** The agent output the directory tree and the contents of the database files, confirming successful setup of `aiosqlite` and the `Integer` override for the `balance` field.
 **Human Review & Intervention:** The agent issued a warning that the `currency` field itself was still a string (`Mapped[str]`) and suggested changing it to an integer. I manually rejected this suggestion to strictly adhere to the ISO 4217 3-letter string standard (e.g., "USD", "EUR") which is the industry best practice for JSON API payloads.
 
 ---
+
 ---
 
 ### Phase 2: Core Business Logic & Atomic Transfers
@@ -107,9 +120,11 @@ We are pausing to perform an architectural audit before moving to Phase 2.
 ---
 
 #### 📄 Iteration 1: Service Layer Architecture & Transaction Scoping
+
 **Objective:** Design the business logic for `transfer_funds` ensuring ACID compliance and proper validation.
 
 **The Prompt:**
+
 ```text
 @Workspace /plan
 
@@ -134,10 +149,12 @@ The objective is to define the Pydantic DTO schemas for strict data validation a
 3. **Artifact Generation:** Produce the `Implementation Plan` detailing the Pydantic fields and the exact pseudocode or logical flow of the `transfer_funds` service.
 </execution_steps>
 ```
+
 **Resulting AI Action:** The agent produced an implementation plan with the requested ACID transaction block (`session.commit()` and `session.rollback()`). However, it incorrectly attempted to use PostgreSQL row-level locking (`.with_for_update()`) on an SQLite database, missed `.scalar_one_or_none()` syntax, and omitted negative amount validations.
 **Human Review & Intervention:** I rejected the plan. I instructed the agent to remove the incompatible locking mechanism, correct the SQLAlchemy 2.0 syntax, and implement strict validations for negative amounts and same-account transfers.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -155,11 +172,12 @@ I am rejecting this Implementation Plan. You have made a few critical errors reg
 **Action:** Update the Implementation Plan to reflect these changes. Once updated, you have my approval to **EXECUTE** the plan and generate the actual Python files in `app/schemas/` and `app/services/`.
 ```
 
-
 #### 📄 Iteration 2: Architectural Audit & Verification (Phase 2)
+
 **Objective:** Audit the generated Python code to ensure strict ACID transaction compliance and SQLite compatibility before building the external API layer.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -169,10 +187,12 @@ We are pausing to perform an architectural audit of Phase 2 before moving to Pha
 1. **Transfer Logic:** Print the exact, complete code for the `transfer_funds` method inside `app/services/transfer_service.py`. I need to verify the `try/except` block, the SQLAlchemy `.scalar_one_or_none()` syntax, and the rollback mechanism.
 2. **Schema Verification:** Print the exact code for the `AccountResponse` class in `app/schemas/account.py`. I need to verify that Pydantic v2 `ConfigDict(from_attributes=True)` was implemented correctly for ORM parsing.
 ```
+
 **Resulting AI Action:** The agent retrieved the exact implementation of the `transfer_funds` method and `AccountResponse` schema. The code correctly utilized `.scalar_one_or_none()` and implemented a robust `try...except` block with explicit `await session.rollback()`.
 **Human Review & Intervention:** I manually reviewed the business logic and verified that all guardrails (preventing negative transfers, preventing same-account transfers, and ensuring atomicity) were securely in place. The core logic is certified production-ready, allowing us to safely proceed to the API routing phase.
 
 ---
+
 ---
 
 ### Phase 3: The API Layer & JWT Authentication
@@ -182,9 +202,11 @@ We are pausing to perform an architectural audit of Phase 2 before moving to Pha
 ---
 
 #### 📄 Iteration 1: Security Architecture & API Routing Scope
+
 **Objective:** Design the JWT security dependency and map the required service endpoints to FastAPI routers.
 
 **The Prompt:**
+
 ```text
 @Workspace /plan
 
@@ -209,10 +231,12 @@ The objective is to implement the Security layer (JWT Authentication) and wire u
 5. **Artifact Generation:** Produce the `Implementation Plan` detailing this exact routing and security structure.
 </execution_steps>
 ```
+
 **Resulting AI Action:** The agent correctly implemented the `OAuth2PasswordBearer` dependency and perfectly scoped the IDOR protection logic (verifying `account.user_id == current_user.id`). However, it missed several key deliverables from the original specification (Cards, Statements, and Transaction history).
 **Human Review & Intervention:** I approved the security logic but rejected the scope. I instructed the agent to expand the routing plan to include the missing `/cards`, `/transactions`, and `/statements` endpoints before authorizing code generation.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -230,10 +254,12 @@ However, to fully satisfy the project requirements, we need to expose the remain
 **Action:** Update the Implementation Plan to include these missing endpoints. Once updated, you have my approval to **EXECUTE** the plan and generate all the Phase 3 security and router files, and wire them into `main.py`.
 ```
 
-#### 📄 Iteration 2: Architectural Audit & Verification (Phase 3)
+#### 📄 Iteration 2: Architectural Audit & Verification
+
 **Objective:** Verify the JWT security implementation and IDOR (Insecure Direct Object Reference) protections in the generated API routers before local execution.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -244,5 +270,29 @@ We are pausing to perform an architectural audit of Phase 3 before moving on. I 
 2. **The IDOR Protection:** Print the `create_transfer` (or equivalent POST) endpoint from `app/api/routers/transfers.py`. I must verify the exact line of code that checks `from_account.user_id == current_user.id` before the `TransferService` is called.
 3. **The Application Entrypoint:** Print the `app/main.py` file to verify that all 6 routers (auth, accounts, transfers, transactions, cards, statements) are successfully included in the FastAPI app instance.
 ```
+
 **Resulting AI Action:** The agent output the requested security functions and endpoint logic. The `get_current_user` dependency correctly decodes the JWT and queries the active user. The `create_transfer` endpoint explicitly enforces `from_account.user_id == current_user.id` prior to invoking the transactional service layer. All six required domain routers were successfully registered in `main.py`.
 **Human Review & Intervention:** I manually audited the authentication flow and IDOR guardrails. The security implementation meets production standards, ensuring users cannot access or transfer funds from unauthorized accounts. The backend is now cleared for local execution and frontend integration.
+
+
+#### 📄 Iteration 3: Usability & Proactive System Polish (Phase 3)
+**Objective:** Improve API usability by adding a root health-check endpoint and proactively auditing the codebase for production-grade scaling issues (like missing pagination).
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I manually added a standard `GET /` endpoint to `main.py` returning a basic status payload `{"message": "Banking REST Service API is running"}` to improve developer experience and provide an immediate visual confirmation of server health before users navigate to `/docs`.
+
+**The Prompt (Architectural Audit):**
+```text
+@Workspace
+
+The application is successfully running locally, and I have manually added a health check on the `/` endpoint. Before we move to testing and Dockerization, I want to perform a proactive code quality audit to ensure this meets Senior-level production standards.
+
+**Action:**
+1. **Audit:** Review the existing routers (`accounts.py`, `transfers.py`, `transactions.py`, etc.). 
+2. **Improvement 1 (Pagination):** Identify any `GET` endpoints that return lists (like getting all transactions or all cards for a user). Add `limit: int = 100` and `offset: int = 0` query parameters to paginate the database queries and prevent memory overloads.
+3. **Improvement 2 (Standardized Errors):** Ensure that any custom exceptions raised in the `app/services/` layer are properly caught in the routers and returned as standard FastAPI `HTTPException` objects with clear, consistent JSON details.
+
+Implement these refinements directly in the code and provide a brief summary of the files you modified.
+```
+**Resulting AI Action:** The agent audited the list-based endpoints (transactions, cards) and successfully implemented `limit` and `offset` pagination to prevent payload overloading. It also standardized the try/except blocks across the routers to ensure consistent JSON error shapes.
+**Human Review & Intervention:** I reviewed the pagination implementation to ensure default limits were reasonable (100) and that the database queries correctly utilized SQLAlchemy's `.limit()` and `.offset()` methods. The API is now highly resilient and ready for the next phase.

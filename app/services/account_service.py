@@ -18,6 +18,12 @@ class AccountService:
         return account.balance
         
     @staticmethod
-    async def get_transactions(session: AsyncSession, account_id: UUID):
-        result = await session.execute(select(Transaction).where(Transaction.account_id == account_id))
+    async def get_transactions(session: AsyncSession, account_id: UUID, limit: int = 100, offset: int = 0):
+        result = await session.execute(
+            select(Transaction)
+            .where(Transaction.account_id == account_id)
+            .order_by(Transaction.timestamp.desc())
+            .offset(offset)
+            .limit(limit)
+        )
         return result.scalars().all()

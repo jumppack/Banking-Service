@@ -39,21 +39,26 @@ async def create_card(
     expiry_month = f"{datetime.now().month:02d}"
     expiry = f"{expiry_month}/{str(expiry_year)[-2:]}"
     
-    new_card = Card(
-        account_id=account.id,
-        card_number=card_number,
-        cvc=cvc,
-        expiry=expiry
-    )
-    
-    session.add(new_card)
-    await session.commit()
-    await session.refresh(new_card)
-    
-    return new_card
+    try:
+        new_card = Card(
+            account_id=account.id,
+            card_number=card_number,
+            cvc=cvc,
+            expiry=expiry
+        )
+        
+        session.add(new_card)
+        await session.commit()
+        await session.refresh(new_card)
+        
+        return new_card
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.get("/", response_model=List[CardResponse])
 async def get_cards(
+    limit: int = 100,
+    offset: int = 0,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
@@ -66,6 +71,11 @@ async def get_cards(
         return []
         
     account_ids = [acc.id for acc in accounts]
-    cards_result = await session.execute(select(Card).where(Card.account_id.in_(account_ids)))
+    cards_result = await session.execute(
+        select(Card)
+        .where(Card.account_id.in_(account_ids))
+        .offset(offset)
+        .limit(limit)
+    )
     
     return cards_result.scalars().all()

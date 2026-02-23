@@ -14,8 +14,9 @@ from app.schemas.transaction import TransactionResponse
 router = APIRouter(prefix="/accounts/{account_id}/statement", tags=["statements"])
 
 @router.get("/", response_model=StatementResponse)
-async def get_statement(
     account_id: uuid.UUID,
+    limit: int = 100,
+    offset: int = 0,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
@@ -30,7 +31,13 @@ async def get_statement(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view statement for this account")
         
     # Fetch transactions for statement mock
-    tx_result = await session.execute(select(Transaction).where(Transaction.account_id == account_id).order_by(Transaction.timestamp.desc()))
+    tx_result = await session.execute(
+        select(Transaction)
+        .where(Transaction.account_id == account_id)
+        .order_by(Transaction.timestamp.desc())
+        .offset(offset)
+        .limit(limit)
+    )
     transactions = tx_result.scalars().all()
     
     total_credits = sum(tx.amount for tx in transactions if tx.type == "credit")
