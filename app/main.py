@@ -1,12 +1,30 @@
 import logging
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+
 from app.api.routers import auth, accounts, transfers, transactions, cards, statements
+from app.db.session import engine, get_db
+from app.core.logging import setup_logging
 
-# Configure basic logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure structural JSON logging
+logger = setup_logging()
 
-app = FastAPI(title="Banking REST Service", description="A production-ready Banking API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize resources
+    logger.info("Starting up Banking REST Service")
+    yield
+    # Shutdown: Clean up resources
+    logger.info("Shutting down Banking REST Service")
+    await engine.dispose()
+
+app = FastAPI(
+    title="Banking REST Service",
+    description="A production-ready Banking API",
+    lifespan=lifespan
+)
 
 # Include all domain routers
 app.include_router(auth.router)
@@ -25,5 +43,14 @@ async def root():
     }
 
 @app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+async def health_check(session: AsyncSession = Depends(get_db)):
+    try:
+        # Perform a deep health check by querying the database
+        await session.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service is unhealthy or database is unreachable"
+        )

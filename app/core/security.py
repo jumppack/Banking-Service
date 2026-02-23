@@ -39,12 +39,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    import uuid
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
-    except jwt.InvalidTokenError:
+        user_id = uuid.UUID(user_id_str)
+    except (jwt.InvalidTokenError, ValueError):
         raise credentials_exception
         
     result = await session.execute(select(User).where(User.id == user_id))

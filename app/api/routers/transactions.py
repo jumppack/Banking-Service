@@ -14,6 +14,7 @@ from app.services.account_service import AccountService
 router = APIRouter(prefix="/accounts/{account_id}/transactions", tags=["transactions"])
 
 @router.get("/", response_model=List[TransactionResponse])
+async def get_transactions(
     account_id: uuid.UUID,
     limit: int = 100,
     offset: int = 0,

@@ -14,6 +14,7 @@ from app.schemas.transaction import TransactionResponse
 router = APIRouter(prefix="/accounts/{account_id}/statement", tags=["statements"])
 
 @router.get("/", response_model=StatementResponse)
+async def get_statement(
     account_id: uuid.UUID,
     limit: int = 100,
     offset: int = 0,
