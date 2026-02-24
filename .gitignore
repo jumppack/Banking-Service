@@ -8,4 +8,4 @@ tests/coverage/
 .coverage*
 
 # Local Scripts
-seed_data.py
+!seed_data.py

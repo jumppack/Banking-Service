@@ -20,11 +20,15 @@ echo ""
 read -p "Would you like to seed the database with synthetic users and transactions? (y/n): " seed_response
 
 if [[ "$seed_response" =~ ^[Yy]$ ]]; then
-    echo "Running database seeder script..."
-    # Ensure the API is fully awake (basic sleep to let SQLite lock initialize if creating from scratch)
-    sleep 3
-    docker-compose exec api python seed_data.py
-    echo "Database seeded successfully."
+    if [ -f "seed_data.py" ]; then
+        echo "Running database seeder script..."
+        # Ensure the API is fully awake (basic sleep to let SQLite lock initialize if creating from scratch)
+        sleep 3
+        docker-compose exec api python seed_data.py
+        echo "Database seeded successfully."
+    else
+        echo "Warning: seed_data.py not found. Skipping data seeding..."
+    fi
 else
     echo "Skipping database seeding."
 fi
