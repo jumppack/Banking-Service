@@ -35,6 +35,7 @@ ENV PYTHONUNBUFFERED=1
 COPY app/ /app/app/
 COPY alembic.ini /app/
 COPY alembic/ /app/alembic/
+COPY seed_data.py /app/
 
 # Run Alembic migrations and start the FastAPI application using Uvicorn
 CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000

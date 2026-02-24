@@ -24,7 +24,7 @@ if [[ "$seed_response" =~ ^[Yy]$ ]]; then
         echo "Running database seeder script..."
         # Ensure the API is fully awake (basic sleep to let SQLite lock initialize if creating from scratch)
         sleep 3
-        docker-compose exec api python seed_data.py
+        docker-compose exec api python seed_data.py || echo "Warning: Seeding execution failed inside container."
         echo "Database seeded successfully."
     else
         echo "Warning: seed_data.py not found. Skipping data seeding..."

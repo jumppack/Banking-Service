@@ -21,7 +21,11 @@ if ($seed_response -match "^[Yy]$") {
     if (Test-Path "seed_data.py") {
         Write-Host "Running database seeder script..."
         Start-Sleep -Seconds 3
-        docker-compose exec api python seed_data.py
+        try {
+            docker-compose exec api python seed_data.py
+        } catch {
+            Write-Host "Warning: Seeding execution failed inside container." -ForegroundColor Yellow
+        }
         Write-Host "Database seeded successfully."
     } else {
         Write-Host "Warning: seed_data.py not found. Skipping data seeding..." -ForegroundColor Yellow
