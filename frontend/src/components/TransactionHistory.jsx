@@ -25,13 +25,29 @@ export const TransactionHistory = ({ transactions }) => {
             </div>
             <ul className="divide-y divide-gray-200">
                 {transactions.map((tx) => {
-                    // Determine styling based on type
-                    const isIncoming = tx.type === 'transfer_in' || tx.type === 'deposit';
+                    // Legacy DB safeguard: old outgoing transactions might hold positive values but type 'debit' or 'transfer_out'
+                    const isOutgoing = tx.amount < 0 || tx.type === 'debit' || tx.type === 'transfer_out';
+                    const isIncoming = !isOutgoing;
+                    
                     const Icon = isIncoming ? ArrowDownLeft : ArrowUpRight;
                     const iconColor = isIncoming ? 'text-green-500' : 'text-red-500';
                     const iconBg = isIncoming ? 'bg-green-100' : 'bg-red-100';
-                    const amountColor = isIncoming ? 'text-green-600' : 'text-red-600';
+                    const amountColor = isIncoming ? 'text-green-600' : 'text-gray-900';
                     const sign = isIncoming ? '+' : '-';
+                    
+                    // Always process absolute cent amount: handles both old positives and new strict negatives safely.
+                    const absoluteCentAmount = Math.abs(tx.amount);
+
+                    // Resolve exact 'Sent To' and 'Received From' phrasing, pushing Email to fully lowercase
+                    let displayLabel = tx.type.replace('_', ' ');
+                    if (tx.counterparty_name) {
+                        displayLabel = isIncoming 
+                            ? `Received from: ${tx.counterparty_name.toLowerCase()}` 
+                            : `Sent to: ${tx.counterparty_name.toLowerCase()}`;
+                    } else if (['transfer_in', 'transfer_out', 'debit', 'credit'].includes(tx.type)) {
+                        // Retain capitalization for internal standard labels if DB lacks a counterparty
+                        displayLabel = tx.type.charAt(0).toUpperCase() + tx.type.slice(1).replace('_', ' ');
+                    }
 
                     return (
                         <li key={tx.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -40,11 +56,11 @@ export const TransactionHistory = ({ transactions }) => {
                                     <Icon className={`h-5 w-5 ${iconColor}`} />
                                 </div>
                                 <div className="ml-4">
-                                    <p className="text-sm font-medium text-gray-900 capitalize">
-                                        {tx.type.replace('_', ' ')}
+                                    <p className="text-sm font-medium text-gray-900">
+                                        {displayLabel}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                        {new Date(tx.created_at).toLocaleDateString(undefined, {
+                                        {new Date(tx.timestamp).toLocaleDateString(undefined, {
                                             month: 'short',
                                             day: 'numeric',
                                             hour: '2-digit',
@@ -54,7 +70,7 @@ export const TransactionHistory = ({ transactions }) => {
                                 </div>
                             </div>
                             <div className={`text-sm font-semibold ${amountColor}`}>
-                                {sign}{formatCurrency(tx.amount)}
+                                {sign}{formatCurrency(absoluteCentAmount)}
                             </div>
                         </li>
                     );

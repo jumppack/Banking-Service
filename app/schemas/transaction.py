@@ -16,4 +16,5 @@ class TransactionResponse(TransactionBase):
     account_id: UUID
     timestamp: datetime
     related_account_id: Optional[UUID]
+    counterparty_name: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)

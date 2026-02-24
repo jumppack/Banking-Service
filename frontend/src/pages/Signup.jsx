@@ -1,42 +1,50 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
+import { Lock, Mail, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 
-export const Login = () => {
+export const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
-    const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         setIsLoading(true);
 
         try {
-            // OAuth2PasswordRequestForm strictly requires form data, not JSON.
-            const formData = new URLSearchParams();
-            formData.append('username', email);
-            formData.append('password', password);
+            const payload = {
+                email: email,
+                password: password
+            };
 
-            const response = await api.post('/auth/login', formData, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
+            await api.post('/auth/signup', payload);
 
-            // On success, hydrate the AuthContext and redirect to the dashboard
-            login(response.data.access_token);
-            navigate('/');
+            // On success, display message and redirect
+            setSuccess('Registration successful! Redirecting to login...');
+            
+            setTimeout(() => {
+                navigate('/login');
+            }, 2000);
+            
         } catch (err) {
-            console.error("Login Error Details:", err);
-            setError(err.response?.data?.detail || err.message || 'An error occurred during login');
+            console.error("Signup Error Details:", err);
+            // Attempt to parse validation array or direct detail string
+            const backendDetail = err.response?.data?.detail;
+            if (Array.isArray(backendDetail)) {
+                setError(backendDetail[0]?.msg || 'Validation error on payload');
+            } else if (typeof backendDetail === 'string') {
+                setError(backendDetail);
+            } else {
+                setError('Registration failed. Please try a different email.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -50,7 +58,7 @@ export const Login = () => {
                         <Lock className="h-6 w-6 text-blue-600" />
                     </div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-                        Sign in to Banking
+                        Create an Account
                     </h2>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -58,6 +66,12 @@ export const Login = () => {
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 flex items-center">
                             <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                             <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                    )}
+                    {success && (
+                        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 flex items-center">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                            <p className="text-sm text-green-700">{success}</p>
                         </div>
                     )}
                     <div className="rounded-md shadow-sm -space-y-px">
@@ -88,10 +102,10 @@ export const Login = () => {
                                     id="password"
                                     name="password"
                                     type={showPassword ? "text" : "password"}
-                                    autoComplete="current-password"
+                                    autoComplete="new-password"
                                     required
                                     className="flex-grow px-3 py-2 outline-none border-none bg-transparent placeholder-gray-500 text-gray-900 sm:text-sm"
-                                    placeholder="Password"
+                                    placeholder="Create a Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
@@ -117,13 +131,13 @@ export const Login = () => {
                             disabled={isLoading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
                         >
-                            {isLoading ? 'Authenticating...' : 'Sign in'}
+                            {isLoading ? 'Creating Account...' : 'Sign Up'}
                         </button>
                     </div>
                     
                     <div className="text-center mt-4">
-                        <Link to="/signup" className="font-medium text-sm text-blue-600 hover:text-blue-500 transition-colors">
-                            Don't have an account? Sign up
+                        <Link to="/login" className="font-medium text-sm text-blue-600 hover:text-blue-500 transition-colors">
+                            Already have an account? Log in
                         </Link>
                     </div>
                 </form>

@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 import { Navigation } from '../components/Navigation';
 import { CardDisplay } from '../components/CardDisplay';
 import { TransactionHistory } from '../components/TransactionHistory';
+import { TransferForm } from '../components/TransferForm';
+import { StatementGenerator } from '../components/StatementGenerator';
 
 export const Dashboard = () => {
     const { user } = useContext(AuthContext);
@@ -20,38 +22,37 @@ export const Dashboard = () => {
     // We isolate the primary checking account to drive the UI safely
     const primaryAccount = accounts.find(acc => acc.account_number?.startsWith("100")) || accounts[0];
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            setLoading(true);
-            setError('');
-            try {
-                // 1. Fetch Accounts
-                const accResponse = await api.get('/accounts/me');
-                const userAccounts = accResponse.data;
-                setAccounts(userAccounts);
+    const fetchDashboardData = useCallback(async () => {
+        setError('');
+        try {
+            // 1. Fetch Accounts
+            const accResponse = await api.get('/accounts/me');
+            const userAccounts = accResponse.data;
+            setAccounts(userAccounts);
 
-                if (userAccounts.length > 0) {
-                    const mainAccId = userAccounts[0].id;
-                    
-                    // 2. Fire parallel requests for Cards and Transactions tied to the main account
-                    const [cardsRes, txRes] = await Promise.all([
-                        api.get('/cards/'),
-                        api.get(`/accounts/${mainAccId}/transactions/`)
-                    ]);
-                    
-                    setCards(cardsRes.data);
-                    setTransactions(txRes.data);
-                }
-            } catch (err) {
-                console.error("Dashboard Fetch Error:", err.response?.status, err);
-                setError('Failed to securely fetch dashboard data.');
-            } finally {
-                setLoading(false);
+            if (userAccounts.length > 0) {
+                const mainAccId = userAccounts[0].id;
+                
+                // 2. Fire parallel requests for Cards and Transactions tied to the main account
+                const [cardsRes, txRes] = await Promise.all([
+                    api.get('/cards/'),
+                    api.get(`/accounts/${mainAccId}/transactions/`)
+                ]);
+                
+                setCards(cardsRes.data);
+                setTransactions(txRes.data);
             }
-        };
-
-        fetchDashboardData();
+        } catch (err) {
+            console.error("Dashboard Fetch Error:", err.response?.status, err);
+            setError('Failed to securely fetch dashboard data.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     // Helper to format the big Hero balance
     const formatBalance = (balanceInCents) => {
@@ -62,7 +63,7 @@ export const Dashboard = () => {
         }).format(balanceInCents / 100);
     };
 
-    if (loading) {
+    if (loading && accounts.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Navigation />
@@ -114,9 +115,19 @@ export const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Bottom Section: Transaction History */}
-                <div className="grid grid-cols-1 gap-8">
-                    <div className="mt-4">
+                {/* Bottom Section: Transfer & Transaction History */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div className="xl:col-span-1 space-y-8">
+                        <TransferForm 
+                            accountId={primaryAccount?.id} 
+                            onTransferComplete={fetchDashboardData} 
+                        />
+                        <StatementGenerator 
+                            accountId={primaryAccount?.id} 
+                        />
+                    </div>
+                    
+                    <div className="xl:col-span-2">
                         <TransactionHistory transactions={transactions} />
                     </div>
                 </div>

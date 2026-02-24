@@ -33,6 +33,24 @@ async def get_transactions(
         
     try:
         transactions = await AccountService.get_transactions(session, account_id, limit, offset)
-        return transactions
+        
+        response_data = []
+        for tx in transactions:
+            counterparty = None
+            if tx.related_account_id:
+                # Resolve the linked Account and then the User to get the email
+                acc_result = await session.execute(select(Account).where(Account.id == tx.related_account_id))
+                related_acc = acc_result.scalar_one_or_none()
+                if related_acc:
+                    user_result = await session.execute(select(User).where(User.id == related_acc.user_id))
+                    related_user = user_result.scalar_one_or_none()
+                    if related_user:
+                        counterparty = related_user.email
+            
+            tx_dict = TransactionResponse.model_validate(tx).model_dump()
+            tx_dict["counterparty_name"] = counterparty
+            response_data.append(tx_dict)
+            
+        return response_data
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -1,4 +1,3 @@
-
 services:
   api:
     build:
@@ -6,11 +5,22 @@ services:
       dockerfile: Dockerfile
     container_name: banking-rest-api
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       # Inject the production database string explicitly to override config
       - DATABASE_URL=sqlite+aiosqlite:///./data/banking.db
     volumes:
       # Map the host's data directory to the container to ensure database persistence
       - ./data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: banking-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - api
     restart: unless-stopped

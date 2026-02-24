@@ -530,7 +530,7 @@ The `CMD` in the Dockerfile only starts the `uvicorn` server. If
 
 We have two integration bugs to squash. I need you to directly modify the files to fix them. Do not give me instructions to do it manually; execute the code changes yourself.
 
-**Action 1: Fix the CORS Blockade (Backend)**
+**Action 1:**: Fix the CORS Blockade (Backend)**
 1. Open `app/main.py`.
 2. Import `CORSMiddleware` from `fastapi.middleware.cors`.
 3. Add the middleware to the FastAPI `app` instance. You must explicitly set `allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"]`, `allow_credentials=True`, `allow_methods=["*"]`, and `allow_headers=["*"]`.
@@ -565,3 +565,28 @@ We are getting a 422 (Unprocessable Entity) error on the `GET /accounts/me` requ
 **Resulting AI Action:** The agent audited the codebase and discovered the frontend and backend code were structurally sound. The root cause was identified as Docker Volume caching; the container was running a stale image without the `/me` route, causing FastAPI to fall back to `/accounts/{account_id}` and fail UUID validation on the string "me". The agent executed a hard container rebuild (`docker-compose up -d --build`) and updated the HTML metadata.
 **Human Review & Intervention:** I provided the console error logs to the AI, which allowed it to diagnose the schema validation failure. Forcing the image rebuild successfully aligned the container state with the local file system, allowing the dynamic seeded data (e.g., balances of ~$36k) to securely render on the dashboard.
 
+--- 
+#### 📄 Iteration 5: User Journey Expansion - Signup & Navigation (Phase 6)
+**Objective:** Implement a complete end-to-end user onboarding flow with secure registration and global navigation.
+
+**The Prompt:**
+@Workspace
+
+The user correctly pointed out that our frontend lacks a complete user journey. We need to implement a Signup flow and a proper Navigation header.
+
+**Action 1: Implement Signup (`src/pages/Signup.jsx`)**
+1. Create a registration form taking `email` and `password`.
+2. On submit, use Axios to make a `POST` request to our `/auth/signup` endpoint with the JSON payload.
+3. On success, show a success message and use React Router's `useNavigate` to redirect the user to `/login`.
+4. Add a "Don't have an account? Sign up" link on the `Login.jsx` page, and an "Already have an account? Log in" link on the `Signup.jsx` page.
+
+**Action 2: Update Routing (`src/App.jsx`)**
+1. Add the new `/signup` route to the React Router configuration.
+
+**Action 3: Global Navigation (`src/components/Navigation.jsx`)**
+1. Ensure the Navigation bar appears at the top of the Dashboard.
+2. It should display the "Banking Service" logo/text on the left.
+3. It should display the current user's email (from AuthContext) and a "Logout" button on the right.
+
+**Resulting AI Action:** The agent built the `Signup.jsx` component, wired it to the `/auth/signup` backend endpoint, updated React Router, and polished the `Navigation.jsx` header to display the decoded JWT user identifier alongside a functional logout mechanism.
+**Human Review & Intervention:** I identified that the frontend architecture lacked a complete product journey. I directed the AI to expand the scope beyond a simple static dashboard by implementing a dedicated registration flow and global navigation. This ensures a production-ready user experience that can be tested end-to-end without relying solely on backend seeder scripts.

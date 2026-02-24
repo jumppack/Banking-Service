@@ -41,6 +41,6 @@
   - [x] Implement AuthContext and Axios
   - [x] Implement Login Page
   - [x] Implement Dashboard
-  - [ ] Implement Transfer Form
+  - [x] Implement Transfer Form
   - [x] Implement Transaction History
-- [ ] Verification Phase 6
+- [/] Verification Phase 6

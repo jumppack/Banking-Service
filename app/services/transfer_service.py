@@ -40,8 +40,8 @@ class TransferService:
             # Debit transaction for sender
             debit_tx = Transaction(
                 account_id=from_account_id,
-                amount=amount,
-                type="debit",
+                amount=-amount,
+                type="transfer_out",
                 related_account_id=to_account_id
             )
             
