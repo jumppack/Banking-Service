@@ -488,3 +488,80 @@ The `CMD` in the Dockerfile only starts the `uvicorn` server. If
 
 **Resulting AI Action:** The agent generated and executed an advanced seeder script that successfully initialized 5 users, 10 accounts (funded between $5k-$50k), 20 matrixed transfers, and 8 debit cards.
 **Human Review & Intervention:** This step was critical to ensure the Phase 6 React frontend has a rich, realistic state to render upon initialization, proving the backend's relational mapping works perfectly at scale.
+
+
+---
+---
+
+### Phase 6: Frontend UI Integration (React)
+
+**Phase Objective:** Develop a modular, consumer-facing Single Page Application (SPA) using React and Tailwind CSS to interface with the FastAPI backend.
+
+---
+
+#### 📄 Iteration 1: Architecture Blueprint & Scaffolding
+**Objective:** Define the component hierarchy, state management strategy, and scaffold the Vite environment.
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I enforced strict project management protocols, commanding the AI to document its proposed architecture in `ai_brain/implementation_plan_phase6.md` before writing code. I then instructed it to execute terminal commands to scaffold a Vite/React app and install `axios`, `react-router-dom`, `lucide-react`, and `tailwindcss` without globally installing packages.
+
+**Resulting AI Action:** The agent documented a strict architecture utilizing Context API for global state and Axios for interceptors. It successfully executed the scaffolding commands within the terminal.
+**Human Review & Intervention:** I mandated this workflow because jumping straight into UI code without a defined state/networking strategy usually results in fragmented, unscalable React applications.
+
+---
+
+#### 📄 Iteration 2: Networking Backbone & Auth State
+**Objective:** Implement the JWT authentication global state and Axios HTTP interceptors.
+
+**The Prompt:**
+*(Manual Developer Intervention)*: I directed the AI to configure Tailwind CSS to scan the source directory, establish the global `AuthContext` with native JWT decoding, and create a centralized Axios instance that automatically attaches the `Authorization: Bearer <token>` header from `localStorage`.
+
+**Resulting AI Action:** The agent configured the environment and implemented a robust `AuthContext` that natively decodes the base64 JWT payload to extract expiration and user identifiers without relying on external bloatware libraries.
+
+---
+
+#### 📄 Iteration 3: Cross-Origin (CORS) & UI/UX Refinement (Phase 6)
+**Objective:**: Resolve browser-level security blocks (CORS) and enhance the accessibility/usability of the authentication interface.
+
+**The Prompt:**
+
+```text
+@Workspace
+
+We have two integration bugs to squash. I need you to directly modify the files to fix them. Do not give me instructions to do it manually; execute the code changes yourself.
+
+**Action 1: Fix the CORS Blockade (Backend)**
+1. Open `app/main.py`.
+2. Import `CORSMiddleware` from `fastapi.middleware.cors`.
+3. Add the middleware to the FastAPI `app` instance. You must explicitly set `allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"]`, `allow_credentials=True`, `allow_methods=["*"]`, and `allow_headers=["*"]`.
+
+**Action 2: Fix the Password Toggle UX (Frontend)**
+1. Open `frontend/src/pages/Login.jsx`.
+2. The current password toggle icon disappears when the input is focused. Fix this by refactoring the input into a Flexbox container.
+3. Wrap the password `<input>` and the toggle `<button>` in a single `div` with these Tailwind classes: `flex items-center border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 overflow-hidden`.
+4. Remove the individual border and focus outline from the `<input>` itself.
+5. Ensure the `<button>` holding the Lucide `Eye` icon sits permanently on the right side of that flex container.
+```
+
+**Resulting AI Action:** The agent successfully modified app/main.py to include the CORSMiddleware with expanded origins to cover both localhost and 127.0.0.1. It also refactored the Login.jsx component, replacing absolute positioning with a robust Flexbox wrapper and focus-within styling to ensure the password visibility toggle remained interactive during input focus.
+
+**Human Review & Intervention:** I identified the specific origin mismatch in the browser console (port 5173 vs 8000). I directed the AI to expand the whitelist to include the loopback address (127.0.0.1) as a safeguard for cross-browser compatibility. I then manually executed docker-compose up -d --build to force the Docker container to capture the updated backend code, as a standard container restart would not have reflected the changes to main.py.
+
+---
+ #### 📄 Iteration 4: Data Fetching & Docker State Resolution (Phase 6)
+**Objective:** Resolve 422 Unprocessable Entity errors during dashboard initialization and update application metadata.
+
+**The Prompt:**
+@Workspace
+
+We are getting a 422 (Unprocessable Entity) error on the `GET /accounts/me` request. This usually means a required parameter is missing or the token header is malformed.
+
+**Action:**
+1. **Audit Backend Route:** Open `app/api/routers/accounts.py` and check the definition for `@router.get("/me")`.
+2. **Verify Axios Header:** Open `src/api/axios.js` and ensure the `Authorization` header is being set exactly.
+3. **Fix and Synchronize:** Update code as needed to match the required schemas.
+4. **Metadata Fix:** Update `frontend/index.html` to change the `<title>` to "Banking Service".
+
+**Resulting AI Action:** The agent audited the codebase and discovered the frontend and backend code were structurally sound. The root cause was identified as Docker Volume caching; the container was running a stale image without the `/me` route, causing FastAPI to fall back to `/accounts/{account_id}` and fail UUID validation on the string "me". The agent executed a hard container rebuild (`docker-compose up -d --build`) and updated the HTML metadata.
+**Human Review & Intervention:** I provided the console error logs to the AI, which allowed it to diagnose the schema validation failure. Forcing the image rebuild successfully aligned the container state with the local file system, allowing the dynamic seeded data (e.g., balances of ~$36k) to securely render on the dashboard.
+

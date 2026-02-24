@@ -40,7 +40,7 @@
   - [x] Scaffold React Application
   - [x] Implement AuthContext and Axios
   - [x] Implement Login Page
-  - [ ] Implement Dashboard
+  - [x] Implement Dashboard
   - [ ] Implement Transfer Form
-  - [ ] Implement Transaction History
+  - [x] Implement Transaction History
 - [ ] Verification Phase 6

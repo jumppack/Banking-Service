@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -29,6 +29,15 @@ async def create_account(
     await session.commit()
     await session.refresh(new_account)
     return new_account
+
+@router.get("/me", response_model=List[AccountResponse])
+async def get_my_accounts(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db)
+):
+    result = await session.execute(select(Account).where(Account.user_id == current_user.id))
+    accounts = result.scalars().all()
+    return accounts
 
 @router.get("/{account_id}", response_model=AccountResponse)
 async def get_account(

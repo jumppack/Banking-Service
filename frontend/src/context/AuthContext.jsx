@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 export const AuthContext = createContext();
 
@@ -7,6 +7,12 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(() => localStorage.getItem('token'));
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+    }, []);
 
     useEffect(() => {
         // If a token exists, parse it to hydrate the user state immediately
@@ -29,9 +35,8 @@ export const AuthProvider = ({ children }) => {
                         return;
                     }
                     
-                    // We only have the generic string identifier in the subject "sub", 
-                    // which is good enough to verify they are logged in.
-                    setUser({ identifier: decoded.sub });
+                    // We now inject 'email' from the backend, but fallback to 'sub' for older tokens
+                    setUser({ identifier: decoded.email || decoded.sub });
                 } catch (error) {
                     console.error("Failed to decode token", error);
                     logout(); // Malformed token; clear everything
@@ -43,18 +48,12 @@ export const AuthProvider = ({ children }) => {
         };
 
         hydrateAuthState();
-    }, [token]);
+    }, [token, logout]);
 
     const login = (newToken) => {
         localStorage.setItem('token', newToken);
         setToken(newToken);
         // The useEffect will catch the token change and parse the user payload
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
     };
 
     return (
