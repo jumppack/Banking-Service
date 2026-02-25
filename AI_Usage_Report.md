@@ -1,3 +1,28 @@
+# AI Usage Report
+
+## Tools Used
+
+**Primary AI Assistant**: Antigravity IDE Agent (@Workspace), Gemini Pro 3.1 (prompt engineering), Chatgpt (Review)
+**Execution Environment**: Antigravity IDE, Docker Desktop
+**Testing/QA**: Browser DevTools, Swagger UI (/docs), Pytest
+
+## Challenges Faced and How AI Helped
+
+**Boilerplate Acceleration**: The AI rapidly scaffolded domain-driven directories, Pydantic schemas, and Tailwind CSS grids.
+**The "Happy Path" Bias**: The AI frequently optimized for the "happy path," omitting boundary validations and negative test scenarios. I had to explicitly prompt for these.
+**Context Loss**: Shifting to a production Docker setup caused CORS blocks due to port changes, requiring manual explicit context injection for the AI to resolve.
+
+## Areas Where Manual Intervention Was Necessary
+
+**Financial Data Integrity**: Overruled the AI's `float` recommendation to enforce `Integer` (cents) for currency fields.
+**ACID Compliance**: Explicitly commanded the AI to wrap database transfers in `try/except` blocks with `await session.rollback()`.
+**Security Architecture**: Intervened to ensure IDOR validations (`account.user_id == current_user.id`) were present on all protected routes.
+**DevOps & Deployment**: Manually audited Docker configurations for multi-stage builds and implemented defensive Bash scripting in `start.sh`.
+
+---
+
+## Prompts and Iterations
+
 ### Phase 1: Database Scaffolding, Schema Design, & DevOps Baseline
 
 **Phase Objective:** Initialize the domain-driven FastAPI structure, design the SQLite database schema, and establish the version control baseline.
@@ -172,7 +197,7 @@ I am rejecting this Implementation Plan. You have made a few critical errors reg
 **Action:** Update the Implementation Plan to reflect these changes. Once updated, you have my approval to **EXECUTE** the plan and generate the actual Python files in `app/schemas/` and `app/services/`.
 ```
 
-#### 📄 Iteration 2: Architectural Audit & Verification (Phase 2)
+#### 📄 Iteration 2: Architectural Audit & Verification
 
 **Objective:** Audit the generated Python code to ensure strict ACID transaction compliance and SQLite compatibility before building the external API layer.
 
@@ -274,14 +299,15 @@ We are pausing to perform an architectural audit of Phase 3 before moving on. I 
 **Resulting AI Action:** The agent output the requested security functions and endpoint logic. The `get_current_user` dependency correctly decodes the JWT and queries the active user. The `create_transfer` endpoint explicitly enforces `from_account.user_id == current_user.id` prior to invoking the transactional service layer. All six required domain routers were successfully registered in `main.py`.
 **Human Review & Intervention:** I manually audited the authentication flow and IDOR guardrails. The security implementation meets production standards, ensuring users cannot access or transfer funds from unauthorized accounts. The backend is now cleared for local execution and frontend integration.
 
+#### 📄 Iteration 3: Usability & Proactive System Polish
 
-#### 📄 Iteration 3: Usability & Proactive System Polish (Phase 3)
 **Objective:** Improve API usability by adding a root health-check endpoint and proactively auditing the codebase for production-grade scaling issues (like missing pagination).
 
 **The Prompt:**
 *(Manual Developer Intervention)*: I manually added a standard `GET /` endpoint to `main.py` returning a basic status payload `{"message": "Banking REST Service API is running"}` to improve developer experience and provide an immediate visual confirmation of server health before users navigate to `/docs`.
 
 **The Prompt (Architectural Audit):**
+
 ```text
 @Workspace
 
@@ -294,13 +320,16 @@ The application is successfully running locally, and I have manually added a hea
 
 Implement these refinements directly in the code and provide a brief summary of the files you modified.
 ```
+
 **Resulting AI Action:** The agent audited the list-based endpoints (transactions, cards) and successfully implemented `limit` and `offset` pagination to prevent payload overloading. It also standardized the try/except blocks across the routers to ensure consistent JSON error shapes.
 **Human Review & Intervention:** I reviewed the pagination implementation to ensure default limits were reasonable (100) and that the database queries correctly utilized SQLAlchemy's `.limit()` and `.offset()` methods. The API is now highly resilient and ready for the next phase.
 
-#### 📄 Iteration 4: Async Database Migration & State Management (Phase 3)
+#### 📄 Iteration 4: Async Database Migration & State Management
+
 **Objective:** Configure Alembic for asynchronous SQLAlchemy execution and apply the initial schema to the SQLite database.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -314,13 +343,16 @@ We are ready to bring the database to life. I need you to configure Alembic, gen
 
 **Output:** Please execute these steps, automatically fix any import/configuration errors that arise during the `autogenerate` process, and confirm once the `.db` file has been successfully created with all our tables.
 ```
+
 **Resulting AI Action:** The agent correctly configured `alembic.ini` and `env.py` for async execution via `create_async_engine`. It identified a missing dependency (`greenlet`) required for async Alembic operations, installed it, updated `requirements.txt`, and successfully generated and applied the initial migration to create `banking.db`.
 **Human Review & Intervention:** I verified that the database file was successfully created in the root directory and that the schema changes were securely tracked in version control before starting the local server for end-to-end manual testing.
 
-#### 📄 Iteration 5: Repository Hygiene & Security (Phase 3)
+#### 📄 Iteration 5: Repository Hygiene & Security
+
 **Objective:** Enforce industry-standard project organization by removing generated database artifacts from the project root and securing version control.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -336,10 +368,12 @@ The user correctly pointed out that leaving `banking.db` in the project root is 
 
 Execute this reorganization and confirm once the app is successfully re-wired to the new data directory.
 ```
+
 **Resulting AI Action:** The agent created a `data/` directory, migrated the `banking.db` file, and successfully updated the connection strings in both `alembic.ini` and the application's session configuration. It also updated the `.gitignore` to strictly exclude the `data/` directory.
 **Human Review & Intervention:** I initiated this reorganization because the AI initially placed the `.db` file in the project root. Leaving data artifacts in the root is an anti-pattern that clutters the workspace and risks accidental commits of sensitive database files. The project structure is now secure and clean.
 
 ---
+
 ---
 
 ### Phase 4: Testing, Observability, & Advanced Health Checks
@@ -349,9 +383,11 @@ Execute this reorganization and confirm once the app is successfully re-wired to
 ---
 
 #### 📄 Iteration 1: Test Architecture & Observability Planning
+
 **Objective:** Design a test suite that isolates database state and implement structured JSON logging for production monitoring.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -368,10 +404,12 @@ We need to perform a strict gap analysis of the current codebase against our pro
 2. Generate an `Implementation Plan` for Phase 4, focusing strictly on fulfilling **Test Suite**, **Logging**, and **Advanced Health Checks**. Leave Containerization for Phase 5.
 3. In the plan, outline the exact folder structure for the tests (e.g., `tests/unit/`, `tests/integration/`) and how you will configure `pytest` with `pytest-asyncio` to test our async database sessions.
 ```
+
 **Resulting AI Action:** The agent correctly identified the missing components and drafted an implementation plan. The plan proposed `pytest` with an in-memory SQLite database (`sqlite+aiosqlite:///:memory:`) for strict test isolation, `python-json-logger` for structured observability, and FastAPI `@asynccontextmanager` for graceful database connection pooling and teardown.
 **Human Review & Intervention:** I audited the proposed architecture. The use of an in-memory database for testing prevents side effects on the local development database, which is a senior-level best practice. I approved the plan for execution without modification.
 
-#### 📄 Iteration 2: Test Scope Refinement & Execution (Phase 4)
+#### 📄 Iteration 2: Test Scope Refinement & Execution
+
 **Objective:** Approve the Phase 4 architecture while enforcing comprehensive integration test coverage across all domain routers.
 
 **The Prompt:**
@@ -380,10 +418,12 @@ We need to perform a strict gap analysis of the current codebase against our pro
 **Resulting AI Action:** The agent installed the testing dependencies, scaffolded the `conftest.py` fixtures, and generated the comprehensive test suite spanning both the `services/` and `routers/` layers. It also implemented the JSON logging middleware and the deep `/health` database probe.
 **Human Review & Intervention:** I manually audited the AI's implementation plan before allowing it to write code. I noticed the AI had minimized the integration testing scope to just Auth and Transfers. I intervened to force the generation of tests for all remaining endpoints, ensuring compliance with the assessment's strict testing requirements.
 
-#### 📄 Iteration 3: Test Coverage & Negative Scenario Auditing (Phase 4)
+#### 📄 Iteration 3: Test Coverage & Negative Scenario Auditing
+
 **Objective:** Move beyond "happy path" testing by enforcing strict code coverage metrics and explicitly testing negative/boundary edge cases.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -402,10 +442,12 @@ The user correctly pointed out that a 100% pass rate does not mean the test suit
 
 **Output:** Provide the coverage report summary before and after your additions, and list the exact negative tests you added.
 ```
+
 **Resulting AI Action:** The AI installed `pytest-cov` and generated a coverage report. The audit revealed that while IDOR and insufficient funds were tested, boundary attacks (negative transfer amounts, zero amounts) and malformed JWT scenarios were missing. The agent generated the missing negative tests and re-ran the suite.
 **Human Review & Intervention:** I initiated this audit because AI agents natively default to writing "happy path" tests. By forcing a coverage report and explicitly injecting boundary-value testing parameters, I ensured the suite evaluates the API's resilience against malicious or malformed client payloads.
 
-#### 📄 Iteration 4: Test Suite Restructuring & Final Audit (Phase 4)
+#### 📄 Iteration 4: Test Suite Restructuring & Final Audit
+
 **Objective:** Improve repository hygiene by managing coverage artifacts, applying industry-standard naming conventions to the test directories, and performing a final gap analysis on test coverage.
 
 **The Prompt:**
@@ -421,9 +463,11 @@ The user correctly pointed out that a 100% pass rate does not mean the test suit
 ---
 
 #### 📄 Iteration 1: Multi-Stage Dockerfile & Compose Setup
+
 **Objective:** Generate a secure, optimized Dockerfile and a docker-compose configuration for local development.
 
 **The Prompt:**
+
 ```text
 @Workspace
 
@@ -441,46 +485,37 @@ We must implement a Dockerfile, a docker-compose.yml, environment variable confi
 
 **Output:** Generate these three files and provide a summary of your implementation.
 ```
+
 **Resulting AI Action:** The agent correctly generated a multi-stage `Dockerfile` utilizing `python:3.12-slim`, effectively separating the build dependencies from the final runtime image to secure the multi-stage build bonus point. It also produced the `.dockerignore` and `docker-compose.yml` with the requested volume mappings and environment variables.
 
 ---
 
 #### 📄 Iteration 2: Docker Verification & Execution
+
 **Objective:** Execute the generated containerization strategy to ensure environment reproducibility.
 
 **The Prompt:**
 *(Manual Developer Intervention)*: I directed the AI to generate the multi-stage `Dockerfile`, `.dockerignore`, and `docker-compose.yml`. I specifically enforced strict volume mapping for the SQLite database (`./data:/app/data`) to ensure data persistence across container lifecycles, and excluded coverage artifacts from the build context.
 
 **Resulting AI Action:** The agent successfully generated the Docker configuration files, utilizing `python:3.12-slim` for both the builder and runner stages. It properly configured `PYTHONDONTWRITEBYTECODE=1` and exposed port 8000.
-**Human Review & Intervention:** I manually reviewed the `.dockerignore` to ensure sensitive/unnecessary directories (`.git/`, `tests/`) were excluded. I then ran `docker-compose up --build` to verify the image compiled successfully and the FastAPI application booted correctly within the isolated container. 
+**Human Review & Intervention:** I manually reviewed the `.dockerignore` to ensure sensitive/unnecessary directories (`.git/`, `tests/`) were excluded. I then ran `docker-compose up --build` to verify the image compiled successfully and the FastAPI application booted correctly within the isolated container.
 
 ---
 
-#### 📄 Iteration 3: Container Lifecycle & Automated Migrations
-**Objective:** Audit the Docker configurations and fix a critical database state bug in the container startup sequence.
+#### 📄 Iteration 3: End-to-End Manual QA & Validation
 
-**The Prompt:**
-```text
-@Workspace
-
-The `Dockerfile` and `docker-compose.yml` are architecturally very strong, but I caught a critical flaw in the container lifecycle. 
-
-**The Issue:**
-The `CMD` in the Dockerfile only starts the `uvicorn` server. If
-```
----
-
-#### 📄 Iteration 4: End-to-End Manual QA & Validation (Phase 5)
 **Objective:** Perform manual, in-container testing to verify data persistence, authentication state, and business logic validation boundaries.
 
 **The Prompt:**
-*(Manual Developer Intervention)*: I executed a strict manual QA protocol via the Swagger UI (`http://localhost:8000/docs`) against the running Docker container. 
+*(Manual Developer Intervention)*: I executed a strict manual QA protocol via the Swagger UI (`http://localhost:8000/docs`) against the running Docker container.
+
 1. **Persistence & Auth:** I created a user, destroyed the container (`docker-compose down`), rebooted it, and successfully authenticated, proving the `./data` volume mapping was flawless.
 2. **Validation Funnel:** I tested the transaction endpoints by attempting to transfer funds to a non-existent account (yielding a proper `404 Account Not Found`), and then attempting an overdraft transfer to a valid account (yielding a proper `400 Insufficient Funds`).
 
 **Human Review & Intervention:** This manual intervention was critical to verify that the theoretical Pytest coverage translated perfectly into the live containerized environment. The backend successfully defended against malformed state and unauthorized overdrafts.
 
-#### 📄 Iteration 5: Database Seeding & Synthetic Data Generation (Phase 5)
+#### 📄 Iteration 4: Database Seeding & Synthetic Data Generation
+
 **Objective:** Populate the SQLite database with realistic synthetic data to facilitate frontend UI development and visual QA.
 
 **The Prompt:**
@@ -489,8 +524,8 @@ The `CMD` in the Dockerfile only starts the `uvicorn` server. If
 **Resulting AI Action:** The agent generated and executed an advanced seeder script that successfully initialized 5 users, 10 accounts (funded between $5k-$50k), 20 matrixed transfers, and 8 debit cards.
 **Human Review & Intervention:** This step was critical to ensure the Phase 6 React frontend has a rich, realistic state to render upon initialization, proving the backend's relational mapping works perfectly at scale.
 
-
 ---
+
 ---
 
 ### Phase 6: Frontend UI Integration (React)
@@ -499,74 +534,35 @@ The `CMD` in the Dockerfile only starts the `uvicorn` server. If
 
 ---
 
-#### 📄 Iteration 1: Architecture Blueprint & Scaffolding
-**Objective:** Define the component hierarchy, state management strategy, and scaffold the Vite environment.
+#### 📄 Iteration 1: Architecture Blueprint, Scaffolding & Networking
+
+**Objective:** Define the component hierarchy, state management strategy, scaffold the Vite environment, and implement JWT authentication global state with Axios HTTP interceptors.
 
 **The Prompt:**
-*(Manual Developer Intervention)*: I enforced strict project management protocols, commanding the AI to document its proposed architecture in `ai_brain/implementation_plan_phase6.md` before writing code. I then instructed it to execute terminal commands to scaffold a Vite/React app and install `axios`, `react-router-dom`, `lucide-react`, and `tailwindcss` without globally installing packages.
+*(Manual Developer Intervention)*: I enforced strict project management protocols, commanding the AI to document its proposed architecture in `ai_brain/implementation_plan_phase6.md` before writing code. I then instructed it to execute terminal commands to scaffold a Vite/React app and install `axios`, `react-router-dom`, `lucide-react`, and `tailwindcss` without globally installing packages. I furthermore directed the AI to establish the global `AuthContext` with native JWT decoding, and create a centralized Axios instance that automatically attaches the `Authorization: Bearer <token>` header from `localStorage`.
 
-**Resulting AI Action:** The agent documented a strict architecture utilizing Context API for global state and Axios for interceptors. It successfully executed the scaffolding commands within the terminal.
+**Resulting AI Action:** The agent documented a strict architecture utilizing Context API for global state and Axios for interceptors. It successfully executed the scaffolding commands within the terminal, configured the environment, and implemented a robust `AuthContext` that natively decodes the base64 JWT payload to extract expiration and user identifiers without relying on external bloatware libraries.
 **Human Review & Intervention:** I mandated this workflow because jumping straight into UI code without a defined state/networking strategy usually results in fragmented, unscalable React applications.
 
 ---
 
-#### 📄 Iteration 2: Networking Backbone & Auth State
-**Objective:** Implement the JWT authentication global state and Axios HTTP interceptors.
+#### 📄 Iteration 2: CORS, UI/UX Refinement & Docker State Resolution
+
+**Objective:** Resolve browser-level security blocks (CORS), fix 422 Unprocessable Entity errors during dashboard initialization, update application metadata, and enhance the authentication interface UX.
 
 **The Prompt:**
-*(Manual Developer Intervention)*: I directed the AI to configure Tailwind CSS to scan the source directory, establish the global `AuthContext` with native JWT decoding, and create a centralized Axios instance that automatically attaches the `Authorization: Bearer <token>` header from `localStorage`.
+*(Manual Developer Intervention)*: I provided console logs showing a CORS error and a 422 error on `GET /accounts/me`. I directed the AI to:
+1. Update `app/main.py` CORS middleware to explicitly allow `http://localhost:5173` and `127.0.0.1:5173`.
+2. Refactor `Login.jsx` to use a Flexbox container to fix the password toggle icon disappearing on focus.
+3. Audit backend routes and Axios headers to resolve the 422 error, updating code and `index.html` metadata.
 
-**Resulting AI Action:** The agent configured the environment and implemented a robust `AuthContext` that natively decodes the base64 JWT payload to extract expiration and user identifiers without relying on external bloatware libraries.
+**Resulting AI Action:** The agent successfully modified `app/main.py` with expanded CORS origins to cover both localhost and 127.0.0.1. It also refactored the `Login.jsx` component using a robust Flexbox wrapper with focus-within styling. Additionally, it identified the 422 error root cause as Docker Volume caching (the container was running a stale image), executed a hard container rebuild (`docker-compose up -d --build`), and updated the HTML metadata.
+**Human Review & Intervention:** I diagnosed the origin mismatch and schema validation failure in the browser console. By directing the specific CORS fix and identifying the missing execution context (stale container state), I allowed the AI to solve the integration bugs, enabling the dynamic seeded data to securely render on the dashboard.
 
 ---
 
-#### 📄 Iteration 3: Cross-Origin (CORS) & UI/UX Refinement (Phase 6)
-**Objective:**: Resolve browser-level security blocks (CORS) and enhance the accessibility/usability of the authentication interface.
+#### 📄 Iteration 3: User Journey Expansion - Signup & Navigation
 
-**The Prompt:**
-
-```text
-@Workspace
-
-We have two integration bugs to squash. I need you to directly modify the files to fix them. Do not give me instructions to do it manually; execute the code changes yourself.
-
-**Action 1:**: Fix the CORS Blockade (Backend)**
-1. Open `app/main.py`.
-2. Import `CORSMiddleware` from `fastapi.middleware.cors`.
-3. Add the middleware to the FastAPI `app` instance. You must explicitly set `allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"]`, `allow_credentials=True`, `allow_methods=["*"]`, and `allow_headers=["*"]`.
-
-**Action 2: Fix the Password Toggle UX (Frontend)**
-1. Open `frontend/src/pages/Login.jsx`.
-2. The current password toggle icon disappears when the input is focused. Fix this by refactoring the input into a Flexbox container.
-3. Wrap the password `<input>` and the toggle `<button>` in a single `div` with these Tailwind classes: `flex items-center border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-blue-500 overflow-hidden`.
-4. Remove the individual border and focus outline from the `<input>` itself.
-5. Ensure the `<button>` holding the Lucide `Eye` icon sits permanently on the right side of that flex container.
-```
-
-**Resulting AI Action:** The agent successfully modified app/main.py to include the CORSMiddleware with expanded origins to cover both localhost and 127.0.0.1. It also refactored the Login.jsx component, replacing absolute positioning with a robust Flexbox wrapper and focus-within styling to ensure the password visibility toggle remained interactive during input focus.
-
-**Human Review & Intervention:** I identified the specific origin mismatch in the browser console (port 5173 vs 8000). I directed the AI to expand the whitelist to include the loopback address (127.0.0.1) as a safeguard for cross-browser compatibility. I then manually executed docker-compose up -d --build to force the Docker container to capture the updated backend code, as a standard container restart would not have reflected the changes to main.py.
-
----
- #### 📄 Iteration 4: Data Fetching & Docker State Resolution (Phase 6)
-**Objective:** Resolve 422 Unprocessable Entity errors during dashboard initialization and update application metadata.
-
-**The Prompt:**
-@Workspace
-
-We are getting a 422 (Unprocessable Entity) error on the `GET /accounts/me` request. This usually means a required parameter is missing or the token header is malformed.
-
-**Action:**
-1. **Audit Backend Route:** Open `app/api/routers/accounts.py` and check the definition for `@router.get("/me")`.
-2. **Verify Axios Header:** Open `src/api/axios.js` and ensure the `Authorization` header is being set exactly.
-3. **Fix and Synchronize:** Update code as needed to match the required schemas.
-4. **Metadata Fix:** Update `frontend/index.html` to change the `<title>` to "Banking Service".
-
-**Resulting AI Action:** The agent audited the codebase and discovered the frontend and backend code were structurally sound. The root cause was identified as Docker Volume caching; the container was running a stale image without the `/me` route, causing FastAPI to fall back to `/accounts/{account_id}` and fail UUID validation on the string "me". The agent executed a hard container rebuild (`docker-compose up -d --build`) and updated the HTML metadata.
-**Human Review & Intervention:** I provided the console error logs to the AI, which allowed it to diagnose the schema validation failure. Forcing the image rebuild successfully aligned the container state with the local file system, allowing the dynamic seeded data (e.g., balances of ~$36k) to securely render on the dashboard.
-
---- 
-#### 📄 Iteration 5: User Journey Expansion - Signup & Navigation (Phase 6)
 **Objective:** Implement a complete end-to-end user onboarding flow with secure registration and global navigation.
 
 **The Prompt:**
@@ -575,15 +571,18 @@ We are getting a 422 (Unprocessable Entity) error on the `GET /accounts/me` requ
 The user correctly pointed out that our frontend lacks a complete user journey. We need to implement a Signup flow and a proper Navigation header.
 
 **Action 1: Implement Signup (`src/pages/Signup.jsx`)**
+
 1. Create a registration form taking `email` and `password`.
 2. On submit, use Axios to make a `POST` request to our `/auth/signup` endpoint with the JSON payload.
 3. On success, show a success message and use React Router's `useNavigate` to redirect the user to `/login`.
 4. Add a "Don't have an account? Sign up" link on the `Login.jsx` page, and an "Already have an account? Log in" link on the `Signup.jsx` page.
 
 **Action 2: Update Routing (`src/App.jsx`)**
+
 1. Add the new `/signup` route to the React Router configuration.
 
 **Action 3: Global Navigation (`src/components/Navigation.jsx`)**
+
 1. Ensure the Navigation bar appears at the top of the Dashboard.
 2. It should display the "Banking Service" logo/text on the left.
 3. It should display the current user's email (from AuthContext) and a "Logout" button on the right.
@@ -591,8 +590,10 @@ The user correctly pointed out that our frontend lacks a complete user journey. 
 **Resulting AI Action:** The agent built the `Signup.jsx` component, wired it to the `/auth/signup` backend endpoint, updated React Router, and polished the `Navigation.jsx` header to display the decoded JWT user identifier alongside a functional logout mechanism.
 **Human Review & Intervention:** I identified that the frontend architecture lacked a complete product journey. I directed the AI to expand the scope beyond a simple static dashboard by implementing a dedicated registration flow and global navigation. This ensures a production-ready user experience that can be tested end-to-end without relying solely on backend seeder scripts.
 
+---
 
-#### 📄 Iteration 7: Statement Generator Implementation (Phase 6)
+#### 📄 Iteration 4: Statement Generator Implementation
+
 **Objective:** Implement the final interactive UI feature to allow users to fetch and view their monthly ledger summaries.
 
 **The Prompt:**
@@ -601,44 +602,32 @@ The user correctly pointed out that our frontend lacks a complete user journey. 
 The Transfer form and Transaction ledger are now mathematically and visually perfect. We need to implement the final interactive feature: The Statement Generator.
 
 **Action 1: Implement `src/components/StatementGenerator.jsx`**
+
 1. Create a clean, Tailwind-styled UI card for generating monthly statements.
 2. Add a button (e.g., "View Monthly Statement"). Include a loading state while fetching.
 3. When clicked, use our Axios instance to make a `GET` request to the statement endpoint.
 4. Display the resulting data in an elegant layout below the button. Show the `starting_balance`, `ending_balance`, `total_credits`, and `total_debits`.
 
 **Action 2: Integrate into `src/pages/Dashboard.jsx`**
+
 1. Import the new `StatementGenerator` component and place it thoughtfully in the Dashboard layout.
 2. Ensure you pass the active `accountId` as a prop.
 
-**Resulting AI Action:** The agent built the `StatementGenerator.jsx` component, successfully wired it to the `/statements` API endpoint using the established Axios instance, and integrated it into the Dashboard's grid layout. 
-**Human Review & Intervention:** I directed the AI to build this final component to ensure 100% feature parity with the backend API built in Phase 3. 
+**Resulting AI Action:** The agent built the `StatementGenerator.jsx` component, successfully wired it to the `/statements` API endpoint using the established Axios instance, and integrated it into the Dashboard's grid layout.
+**Human Review & Intervention:** I directed the AI to build this final component to ensure 100% feature parity with the backend API built in Phase 3.
 
 ---
 
-#### 📄 Iteration 8: CI/CD Pipeline & Documentation Standardization (Phase 7: Deployment & Polish)
-**Objective:** Standardize continuous integration pipelines and rewrite the README to provide a frictionless experience for the grading engineer.
+---
 
-**The Prompt:**
-@Workspace
+### Phase 7: Deployment, Robustness & Polish
 
-We are finalizing the application for grading and deployment. I need to ensure the CI/CD pipelines are streamlined, the tests are passing, and the documentation is pristine.
-
-**Action 1: Test & Coverage Verification**
-1. Run the full test suite with coverage: `pytest --cov=app tests/`.
-
-**Action 2: CI/CD Pipeline Standardization**
-1. Create a GitHub Actions workflow (`.github/workflows/ci.yml`) that triggers on push/pull_request to main.
-2. The pipeline must setup Python, install dependencies, and run pytest.
-
-**Action 3: The Ultimate README.md**
-Rewrite the `README.md` to be highly professional and user-aligned for a grader. Include Architecture, Local Quickstart (Docker), Data Seeding, and Testing instructions.
-
-**Resulting AI Action:** The agent ran the test suite (confirming passing coverage), generated the GitHub Actions YAML file for automated testing, and completely rewrote the `README.md` to serve as a comprehensive deployment guide.
-**Human Review & Intervention:** I recognized that a successful technical assessment requires operational maturity, not just functional code. I intervened to force the creation of CI/CD pipelines and a grader-focused README to prove my capability in delivering maintainable, production-ready software.
+**Phase Objective:** Finalize Docker configurations, implement defensive deployment scripts, and resolve production network issues.
 
 ---
 
-#### 📄 Iteration 9: Production Dockerization & Bootstrapping (Phase 7)
+#### 📄 Iteration 1: Production Dockerization & Bootstrapping
+
 **Objective:** Unify the frontend into a production-grade Nginx container and provide OS-agnostic startup scripts for a one-click deployment.
 
 **The Prompt:**
@@ -647,12 +636,15 @@ Rewrite the `README.md` to be highly professional and user-aligned for a grader.
 We are finalizing the application for a Senior Engineering assessment submission. We need to deploy a built, production-ready version of the frontend and provide two highly robust entry points for the grader.
 
 **Action 1: Production Frontend Dockerfile**
+
 1. Create `frontend/Dockerfile` using a multi-stage build (Node alpine for build, Nginx alpine for serving).
 
 **Action 2: Update Docker Compose**
+
 1. Update `docker-compose.yml` to include the `frontend` service building from `./frontend`. Map port 8080:80.
 
 **Action 3: Interactive Start Script (`start.sh`)**
+
 1. Create a robust Bash script that checks for Docker, runs `docker-compose up -d --build`, asks the user if they want to seed the database, and prints the final URLs.
 
 **Resulting AI Action:** The agent successfully created the multi-stage frontend Dockerfile, updated the orchestrator, and generated the interactive `start.sh` and `start.ps1` bootstrap scripts.
@@ -660,7 +652,8 @@ We are finalizing the application for a Senior Engineering assessment submission
 
 ---
 
-#### 📄 Iteration 10: Defensive Scripting & Seeder Versioning (Phase 7)
+#### 📄 Iteration 2: Defensive Scripting & Seeder Versioning
+
 **Objective:** Prevent fatal deployment crashes when synthetic data scripts are missing and track the seeder in version control.
 
 **The Prompt:**
@@ -669,9 +662,11 @@ We are finalizing the application for a Senior Engineering assessment submission
 We need to make our deployment robust. We need to track the seeder script in Git and defensively update our startup scripts.
 
 **Action 1: Version Control for seed_data.py**
+
 1. Audit the `.gitignore` file. Ensure `seed_data.py` is NOT being ignored. Stage it for version control.
 
 **Action 2: Make `start.sh` and `start.ps1` Robust**
+
 1. Inject a defensive file-existence check before running the Docker execution command for the seeder.
 2. If the file DOES NOT exist, `echo` a clear warning message and allow the script to gracefully continue without exiting with an error code.
 
@@ -680,7 +675,8 @@ We need to make our deployment robust. We need to track the seeder script in Git
 
 ---
 
-#### 📄 Iteration 11: Production Network Configuration & CORS (Phase 7)
+#### 📄 Iteration 3: Production Network Configuration & CORS
+
 **Objective:** Resolve cross-origin blocks caused by migrating the frontend to a production Docker port.
 
 **The Prompt:**
@@ -689,9 +685,11 @@ We need to make our deployment robust. We need to track the seeder script in Git
 We have a cross-origin (CORS) blockade on fresh environments because our production Docker deployment changed the frontend port, but our backend whitelist wasn't updated to match.
 
 **Action: Update CORS Whitelist (Backend)**
+
 1. Update `app/main.py` CORS middleware `allow_origins` to explicitly include the new production Docker ports (`http://localhost:8080`, `http://127.0.0.1:8080`).
 
 **Action: Verify Axios URL (Frontend)**
+
 1. Open `src/api/axios.js` and ensure the `baseURL` points to the backend Docker port (`http://localhost:8000`).
 
 **Resulting AI Action:** The agent updated the FastAPI CORS whitelist to accept traffic from the Nginx container port and verified the frontend Axios routing.
