@@ -21,17 +21,16 @@ To run this application, you must have the following installed on your machine:
 
 ## Entry Point 1: The Quickstart Script
 
-The absolute easiest way to evaluate this application is via the included interactive bash script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data.
+The absolute easiest way to evaluate this application is via the included interactive script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data (users, accounts, simulated transaction matrices).
 
-1.  Make the script executable (if not already):
-    ```bash
-    chmod +x start.sh
-    ```
-2.  Run the script:
-    ```bash
-    ./start.sh
-    ```
-3.  When prompted, type `y` to seed the database with synthetic users, accounts, and realistic transaction histories.
+**For Mac/Linux:**
+1.  Make the script executable: `chmod +x start.sh`
+2.  Run the script: `./start.sh`
+
+**For Windows (PowerShell):**
+1.  Run the script from your terminal: `.\start.ps1`
+
+*Note: The script contains defensive file-existence checks. If `seed_data.py` is missing from the image for any reason, the pipeline will gracefully warn you rather than crashing.*
 
 **Access the Applications:**
 *   **Frontend Dashboard:** [http://localhost:8080](http://localhost:8080)
