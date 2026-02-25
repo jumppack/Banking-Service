@@ -4,68 +4,43 @@ A production-ready Banking REST Service built with an asynchronous Python backen
 
 ## System Overview & Architecture
 
-*   **Backend:** FastAPI, Python 3.9+, Async SQLAlchemy 2.0, SQLite (via `aiosqlite`).
-*   **Frontend:** React 18, Vite, Tailwind CSS, React Router DOM, Axios.
-*   **Security:** JWT Authentication (15-minute strict timeouts), bcrypt password hashing, IDOR protection.
-*   **Infrastructure:** Docker, Docker Compose, Nginx.
+- **Backend:** FastAPI, Python 3.9+, Async SQLAlchemy 2.0, SQLite (via `aiosqlite`).
+- **Frontend:** React 18, Vite, Tailwind CSS, React Router DOM, Axios.
+- **Security:** JWT Authentication (15-minute strict timeouts), bcrypt password hashing, IDOR protection.
+- **Infrastructure:** Docker, Docker Compose, Nginx.
 
 ---
 
 ## Prerequisites
 
 To run this application, you must have the following installed on your machine:
-*   [Docker](https://docs.docker.com/get-docker/)
-*   [Docker Compose](https://docs.docker.com/compose/install/)
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ---
 
-## Entry Point 1: The Quickstart Script
+## Deployment
 
 The absolute easiest way to evaluate this application is via the included interactive script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data (users, accounts, simulated transaction matrices).
 
+*For manual deployment steps, architecture details, and troubleshooting, please see [docs/Deployment.md](docs/Deployment.md).*
+
 **For Mac/Linux:**
+
 1.  Make the script executable: `chmod +x start.sh`
 2.  Run the script: `./start.sh`
 
 **For Windows (PowerShell):**
+
 1.  Run the script from your terminal: `.\start.ps1`
 
-*Note: The script contains defensive file-existence checks. If `seed_data.py` is missing from the image for any reason, the pipeline will gracefully warn you rather than crashing.*
+_Note: The script contains defensive file-existence checks. If `seed_data.py` is missing from the image for any reason, the pipeline will gracefully warn you rather than crashing._
 
 **Access the Applications:**
-*   **Frontend Dashboard:** [http://localhost:8080](http://localhost:8080)
-*   **Interactive API documentation (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
----
-
-## Entry Point 2: Manual Step-by-Step Deployment
-
-If you prefer to stand up the environment manually or need to debug specific components:
-
-### 1. Environment Variables
-Both services use defaults, but you can override ports by creating an `.env` file in the root directory:
-```env
-API_PORT=8000
-FRONTEND_PORT=8080
-```
-
-### 2. Starting the Backend Standalone
-```bash
-docker-compose up -d --build api
-```
-*The API evaluates the `data/banking.db` SQLite file locally using volume mapping to persist data across container restarts.*
-
-### 3. Starting the Frontend Standalone
-```bash
-docker-compose up -d --build frontend
-```
-*The frontend uses a multi-stage Docker build to compile the React/Vite assets down to static files, serving them blazing fast behind an Alpine Nginx web server configured for SPA fallback routing.*
-
-### 4. Executing Database Migrations/Seeding Manually
-If you opted not to use the Quickstart script, you can seed the SQLite database manually:
-```bash
-docker-compose exec api python seed_data.py
-```
+- **Frontend Dashboard:** [http://localhost:8080](http://localhost:8080)
+- **Interactive API documentation (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -74,11 +49,89 @@ docker-compose exec api python seed_data.py
 The backend includes a comprehensive, 23-assertion test suite that validates unit logic (bypassing HTTP) and end-to-end integration logic. The suite uses a dedicated, isolated in-memory SQLite database to prevent polluting production data.
 
 To execute the test suite (requires an active Python virtual environment with `pytest` installed):
+
 ```bash
 # Ensure you are at the project root
 pytest tests/
 ```
-*Coverage includes robust negative testing (e.g., overdrafts, invalid emails, 401 unauthenticated requests) and IDOR boundaries.*
+
+_Coverage includes robust negative testing (e.g., overdrafts, invalid emails, 401 unauthenticated requests) and IDOR boundaries._
+
+---
+
+## API Documentation
+
+While the API exposes an interactive Swagger UI at `/docs` when running, below is a quick reference for the core REST endpoints.
+
+**Authentication:**  
+Except for `signup` and `login`, all endpoints require a Bearer token. Pass this in the `Authorization` header:
+`Authorization: Bearer <your_jwt_token>`
+
+### Core Endpoints
+
+#### Auth
+
+**Register a New User**
+
+- `POST /auth/signup`
+- **Description:** Registers a new user account.
+- **Body:**
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }
+  ```
+
+**Login**
+
+- `POST /auth/login`
+- **Description:** Authenticates a user and returns a 15-minute JWT Bearer token.
+- **Body:**
+  ```json
+  {
+    "username": "user@example.com",
+    "password": "securepassword123"
+  }
+  ```
+
+#### Accounts
+
+**Get My Accounts**
+
+- `GET /accounts/me`
+- **Description:** Retrieves all financial bank accounts linked to the authenticated user.
+
+#### Transfers
+
+**Execute Transfer**
+
+- `POST /transfers/`
+- **Description:** Executes a mathematically strict transfer between accounts.
+- **Body:**
+  ```json
+  {
+    "from_account_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "to_identifier": "receiver@example.com",
+    "amount": 5000
+  }
+  ```
+  _(Note: Amounts are heavily enforced as integer cents. e.g., `5000` = $50.00)_
+
+#### Transactions
+
+**List Transactions**
+
+- `GET /accounts/{account_id}/transactions`
+- **Description:** Fetches a paginated ledger of debits and credits for a specific account.
+
+#### Statements
+
+**Generate Statement**
+
+- `GET /accounts/{account_id}/statement`
+- **Description:** Generates a summarized financial statement with starting/ending balances.
+
 
 ---
 
