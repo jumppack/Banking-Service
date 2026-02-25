@@ -3,7 +3,7 @@
 ## Tools Used
 
 **Primary AI Assistant**: Antigravity IDE Agent (@Workspace), Gemini Pro 3.1 (prompt engineering), Chatgpt (Review)
-**Execution Environment**: Antigravity IDE, Docker Desktop
+**Execution Environment**: Antigravity IDE, Docker Desktop.
 **Testing/QA**: Browser DevTools, Swagger UI (/docs), Pytest
 
 ## Challenges Faced and How AI Helped
@@ -18,6 +18,8 @@
 **ACID Compliance**: Explicitly commanded the AI to wrap database transfers in `try/except` blocks with `await session.rollback()`.
 **Security Architecture**: Intervened to ensure IDOR validations (`account.user_id == current_user.id`) were present on all protected routes.
 **DevOps & Deployment**: Manually audited Docker configurations for multi-stage builds and implemented defensive Bash scripting in `start.sh`.
+
+*NOTE*: I have included manual interventions step with every prompt and iteration with the AI. Please refer to the "Human Review & Intervention" in each iterations below to learn more.
 
 ---
 
@@ -552,6 +554,7 @@ We must implement a Dockerfile, a docker-compose.yml, environment variable confi
 
 **The Prompt:**
 *(Manual Developer Intervention)*: I provided console logs showing a CORS error and a 422 error on `GET /accounts/me`. I directed the AI to:
+
 1. Update `app/main.py` CORS middleware to explicitly allow `http://localhost:5173` and `127.0.0.1:5173`.
 2. Refactor `Login.jsx` to use a Flexbox container to fix the password toggle icon disappearing on focus.
 3. Audit backend routes and Axios headers to resolve the 422 error, updating code and `index.html` metadata.
