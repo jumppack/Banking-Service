@@ -29,7 +29,7 @@ async def test_transfer_funds_success(session):
 
 @pytest.mark.asyncio
 async def test_transfer_insufficient_funds(session):
-    user = User(email="poor@transfers.com", hashed_password="pw")
+    user = User(email="poor@transfers.com", hashed_password="securepw")
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -56,7 +56,7 @@ async def test_transfer_zero_amount(session):
 
 @pytest.mark.asyncio
 async def test_transfer_same_account(session):
-    user = User(email="same@transfers.com", hashed_password="pw")
+    user = User(email="same@transfers.com", hashed_password="securepw")
     session.add(user)
     await session.commit()
     await session.refresh(user)

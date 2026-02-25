@@ -13,7 +13,14 @@ from app.schemas.card import CardCreate, CardResponse
 
 router = APIRouter(prefix="/cards", tags=["cards"])
 
-@router.post("/", response_model=CardResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", 
+    response_model=CardResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Issue a new physical/virtual card",
+    description="Generates a new 16-digit card number, CVC, and Expiry date linked to the specified Account ID. Fails if the user does not own the parent account.",
+    response_description="The newly issued Card entity details."
+)
 async def create_card(
     card_in: CardCreate,
     current_user: User = Depends(get_current_user),
@@ -55,7 +62,13 @@ async def create_card(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/", response_model=List[CardResponse])
+@router.get(
+    "/", 
+    response_model=List[CardResponse],
+    summary="List my cards",
+    description="Fetches all cards linked to any account owned by the currently authenticated user.",
+    response_description="A list of Card entities."
+)
 async def get_cards(
     limit: int = 100,
     offset: int = 0,

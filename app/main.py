@@ -43,6 +43,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.middleware.logging_middleware import LoggingMiddleware
+app.add_middleware(LoggingMiddleware)
+
 # Include all domain routers
 app.include_router(auth.router)
 app.include_router(accounts.router)
@@ -50,6 +53,28 @@ app.include_router(transfers.router)
 app.include_router(transactions.router)
 app.include_router(cards.router)
 app.include_router(statements.router)
+
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    logger.exception(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"}
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc: HTTPException):
+    if exc.status_code >= 500:
+        logger.error(f"HTTPException {exc.status_code}: {exc.detail}")
+    else:
+        logger.warning(f"HTTPException {exc.status_code}: {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=getattr(exc, "headers", None)
+    )
 
 @app.get("/")
 async def root():

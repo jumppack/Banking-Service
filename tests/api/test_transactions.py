@@ -2,8 +2,8 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_get_transactions(client):
-    await client.post("/auth/signup", json={"email": "tx_user@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "tx_user@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "tx_user@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "tx_user@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -18,8 +18,8 @@ async def test_get_transactions(client):
 
 @pytest.mark.asyncio
 async def test_get_transactions_absurd_limit(client):
-    await client.post("/auth/signup", json={"email": "tx_limit@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "tx_limit@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "tx_limit@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "tx_limit@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -33,8 +33,8 @@ async def test_get_transactions_absurd_limit(client):
 
 @pytest.mark.asyncio
 async def test_get_transactions_unauthorized(client):
-    await client.post("/auth/signup", json={"email": "tx_fail@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "tx_fail@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "tx_fail@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "tx_fail@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

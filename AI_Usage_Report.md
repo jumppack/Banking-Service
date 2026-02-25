@@ -590,3 +590,109 @@ The user correctly pointed out that our frontend lacks a complete user journey. 
 
 **Resulting AI Action:** The agent built the `Signup.jsx` component, wired it to the `/auth/signup` backend endpoint, updated React Router, and polished the `Navigation.jsx` header to display the decoded JWT user identifier alongside a functional logout mechanism.
 **Human Review & Intervention:** I identified that the frontend architecture lacked a complete product journey. I directed the AI to expand the scope beyond a simple static dashboard by implementing a dedicated registration flow and global navigation. This ensures a production-ready user experience that can be tested end-to-end without relying solely on backend seeder scripts.
+
+
+#### 📄 Iteration 7: Statement Generator Implementation (Phase 6)
+**Objective:** Implement the final interactive UI feature to allow users to fetch and view their monthly ledger summaries.
+
+**The Prompt:**
+@Workspace
+
+The Transfer form and Transaction ledger are now mathematically and visually perfect. We need to implement the final interactive feature: The Statement Generator.
+
+**Action 1: Implement `src/components/StatementGenerator.jsx`**
+1. Create a clean, Tailwind-styled UI card for generating monthly statements.
+2. Add a button (e.g., "View Monthly Statement"). Include a loading state while fetching.
+3. When clicked, use our Axios instance to make a `GET` request to the statement endpoint.
+4. Display the resulting data in an elegant layout below the button. Show the `starting_balance`, `ending_balance`, `total_credits`, and `total_debits`.
+
+**Action 2: Integrate into `src/pages/Dashboard.jsx`**
+1. Import the new `StatementGenerator` component and place it thoughtfully in the Dashboard layout.
+2. Ensure you pass the active `accountId` as a prop.
+
+**Resulting AI Action:** The agent built the `StatementGenerator.jsx` component, successfully wired it to the `/statements` API endpoint using the established Axios instance, and integrated it into the Dashboard's grid layout. 
+**Human Review & Intervention:** I directed the AI to build this final component to ensure 100% feature parity with the backend API built in Phase 3. 
+
+---
+
+#### 📄 Iteration 8: CI/CD Pipeline & Documentation Standardization (Phase 7: Deployment & Polish)
+**Objective:** Standardize continuous integration pipelines and rewrite the README to provide a frictionless experience for the grading engineer.
+
+**The Prompt:**
+@Workspace
+
+We are finalizing the application for grading and deployment. I need to ensure the CI/CD pipelines are streamlined, the tests are passing, and the documentation is pristine.
+
+**Action 1: Test & Coverage Verification**
+1. Run the full test suite with coverage: `pytest --cov=app tests/`.
+
+**Action 2: CI/CD Pipeline Standardization**
+1. Create a GitHub Actions workflow (`.github/workflows/ci.yml`) that triggers on push/pull_request to main.
+2. The pipeline must setup Python, install dependencies, and run pytest.
+
+**Action 3: The Ultimate README.md**
+Rewrite the `README.md` to be highly professional and user-aligned for a grader. Include Architecture, Local Quickstart (Docker), Data Seeding, and Testing instructions.
+
+**Resulting AI Action:** The agent ran the test suite (confirming passing coverage), generated the GitHub Actions YAML file for automated testing, and completely rewrote the `README.md` to serve as a comprehensive deployment guide.
+**Human Review & Intervention:** I recognized that a successful technical assessment requires operational maturity, not just functional code. I intervened to force the creation of CI/CD pipelines and a grader-focused README to prove my capability in delivering maintainable, production-ready software.
+
+---
+
+#### 📄 Iteration 9: Production Dockerization & Bootstrapping (Phase 7)
+**Objective:** Unify the frontend into a production-grade Nginx container and provide OS-agnostic startup scripts for a one-click deployment.
+
+**The Prompt:**
+@Workspace
+
+We are finalizing the application for a Senior Engineering assessment submission. We need to deploy a built, production-ready version of the frontend and provide two highly robust entry points for the grader.
+
+**Action 1: Production Frontend Dockerfile**
+1. Create `frontend/Dockerfile` using a multi-stage build (Node alpine for build, Nginx alpine for serving).
+
+**Action 2: Update Docker Compose**
+1. Update `docker-compose.yml` to include the `frontend` service building from `./frontend`. Map port 8080:80.
+
+**Action 3: Interactive Start Script (`start.sh`)**
+1. Create a robust Bash script that checks for Docker, runs `docker-compose up -d --build`, asks the user if they want to seed the database, and prints the final URLs.
+
+**Resulting AI Action:** The agent successfully created the multi-stage frontend Dockerfile, updated the orchestrator, and generated the interactive `start.sh` and `start.ps1` bootstrap scripts.
+**Human Review & Intervention:** I directed this to replace the manual `npm run dev` process with a true production build, ensuring the grader receives a professional, isolated runtime environment that does not require local Node.js installations.
+
+---
+
+#### 📄 Iteration 10: Defensive Scripting & Seeder Versioning (Phase 7)
+**Objective:** Prevent fatal deployment crashes when synthetic data scripts are missing and track the seeder in version control.
+
+**The Prompt:**
+@Workspace
+
+We need to make our deployment robust. We need to track the seeder script in Git and defensively update our startup scripts.
+
+**Action 1: Version Control for seed_data.py**
+1. Audit the `.gitignore` file. Ensure `seed_data.py` is NOT being ignored. Stage it for version control.
+
+**Action 2: Make `start.sh` and `start.ps1` Robust**
+1. Inject a defensive file-existence check before running the Docker execution command for the seeder.
+2. If the file DOES NOT exist, `echo` a clear warning message and allow the script to gracefully continue without exiting with an error code.
+
+**Resulting AI Action:** The agent updated `.gitignore`, staged the seeder file, and wrapped the `docker-compose exec` seeding commands inside defensive `if [ -f "seed_data.py" ]` blocks.
+**Human Review & Intervention:** I performed a "Stranger Test" by cloning the repo to a fresh machine and discovered the bootstrap script crashed because it blindly assumed the presence of ignored files. I intervened to implement defensive Bash programming to ensure graceful degradation.
+
+---
+
+#### 📄 Iteration 11: Production Network Configuration & CORS (Phase 7)
+**Objective:** Resolve cross-origin blocks caused by migrating the frontend to a production Docker port.
+
+**The Prompt:**
+@Workspace
+
+We have a cross-origin (CORS) blockade on fresh environments because our production Docker deployment changed the frontend port, but our backend whitelist wasn't updated to match.
+
+**Action: Update CORS Whitelist (Backend)**
+1. Update `app/main.py` CORS middleware `allow_origins` to explicitly include the new production Docker ports (`http://localhost:8080`, `http://127.0.0.1:8080`).
+
+**Action: Verify Axios URL (Frontend)**
+1. Open `src/api/axios.js` and ensure the `baseURL` points to the backend Docker port (`http://localhost:8000`).
+
+**Resulting AI Action:** The agent updated the FastAPI CORS whitelist to accept traffic from the Nginx container port and verified the frontend Axios routing.
+**Human Review & Intervention:** During my clean-environment QA testing, I identified a severe network failure preventing login. I diagnosed the issue as a CORS preflight failure caused by moving the frontend from Vite's dev port (5173) to Nginx's production port (8080) and directed the AI to patch the backend security policies accordingly.

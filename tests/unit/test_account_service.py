@@ -5,7 +5,7 @@ from app.models.user import User
 
 @pytest.mark.asyncio
 async def test_get_account_balance(session):
-    user = User(email="balance@test.com", hashed_password="pw")
+    user = User(email="balance@test.com", hashed_password="securepw")
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -19,7 +19,7 @@ async def test_get_account_balance(session):
 
 @pytest.mark.asyncio
 async def test_get_account_success(session):
-    user = User(email="getacc@test.com", hashed_password="pw")
+    user = User(email="getacc@test.com", hashed_password="securepw")
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -35,7 +35,7 @@ async def test_get_account_success(session):
 @pytest.mark.asyncio
 async def test_get_transactions_pagination(session):
     from app.models.transaction import Transaction
-    user = User(email="tx@test.com", hashed_password="pw")
+    user = User(email="tx@test.com", hashed_password="securepw")
     session.add(user)
     await session.commit()
     await session.refresh(user)

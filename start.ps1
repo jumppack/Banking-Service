@@ -10,6 +10,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 2. Build and stand up the environment
+if (-Not (Test-Path ".env")) {
+    Write-Host "Warning: .env file not found. Auto-generating from .env.example..." -ForegroundColor Yellow
+    Copy-Item ".env.example" -Destination ".env"
+}
+
 Write-Host "Building and starting Docker containers in detached mode..."
 docker-compose up -d --build
 

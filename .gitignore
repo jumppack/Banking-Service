@@ -6,6 +6,7 @@ __pycache__/
 data/
 tests/coverage/
 .coverage*
+logs/
 
 # Local Scripts
 !seed_data.py

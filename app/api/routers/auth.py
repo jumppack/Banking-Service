@@ -5,14 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
-from app.core.security import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.token import Token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup", 
+    response_model=UserResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description="Creates a new user account with an email and raw password. The password is automatically hashed before database insertion.",
+    response_description="The newly created User entity without sensitive credentials."
+)
 async def signup(user_in: UserCreate, session: AsyncSession = Depends(get_db)):
     # Check if user exists
     result = await session.execute(select(User).where(User.email == user_in.email))
@@ -32,7 +40,13 @@ async def signup(user_in: UserCreate, session: AsyncSession = Depends(get_db)):
     await session.refresh(new_user)
     return new_user
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login", 
+    response_model=Token,
+    summary="Authenticate User and return JWT",
+    description="Validates user credentials against hashed password. If valid, issues a temporary JWT access token for subsequent API calls.",
+    response_description="A Bearer token string and its type."
+)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(User).where(User.email == form_data.username))
     user = result.scalar_one_or_none()
@@ -46,7 +60,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
         
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id), "email": user.email}, expires_delta=access_token_expires
     )

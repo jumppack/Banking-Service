@@ -12,6 +12,11 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # 2. Build and stand up the environment
+if [ ! -f ".env" ]; then
+    echo "Warning: .env file not found. Auto-generating from .env.example..."
+    cp .env.example .env
+fi
+
 echo "Building and starting Docker containers in detached mode..."
 docker-compose up -d --build
 

@@ -13,7 +13,13 @@ from app.services.account_service import AccountService
 
 router = APIRouter(prefix="/accounts/{account_id}/transactions", tags=["transactions"])
 
-@router.get("/", response_model=List[TransactionResponse])
+@router.get(
+    "/", 
+    response_model=List[TransactionResponse],
+    summary="List account transactions",
+    description="Fetches a paginated ledger sequence of transactions (credits/debits) associated with the specified account.",
+    response_description="A list of executed transactions. If internal transfers occurred, counterparty resolution is attempted."
+)
 async def get_transactions(
     account_id: uuid.UUID,
     limit: int = 100,

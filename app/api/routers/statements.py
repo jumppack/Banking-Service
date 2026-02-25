@@ -13,7 +13,13 @@ from app.schemas.transaction import TransactionResponse
 
 router = APIRouter(prefix="/accounts/{account_id}/statement", tags=["statements"])
 
-@router.get("/", response_model=StatementResponse)
+@router.get(
+    "/", 
+    response_model=StatementResponse,
+    summary="Generate account statement summary",
+    description="Calculates real-time net change, starting balance, and ending balance by aggregating credits and debits over the requested pagination window.",
+    response_description="A comprehensive Statement object containing metadata and the embedded transaction list."
+)
 async def get_statement(
     account_id: uuid.UUID,
     limit: int = 100,

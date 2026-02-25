@@ -12,7 +12,13 @@ import uuid
 
 router = APIRouter(prefix="/transfers", tags=["transfers"])
 
-@router.post("/", status_code=status.HTTP_200_OK)
+@router.post(
+    "/", 
+    status_code=status.HTTP_200_OK,
+    summary="Execute internal fund transfer",
+    description="Transfers funds from the authenticated user's account to a counterparty account (resolvable by UUID or Email). Guaranteed mathematically by strict Double-Entry Logic inside a database transaction.",
+    response_description="A success confirmation wrapper."
+)
 async def create_transfer(
     transfer_in: TransferCreate,
     current_user: User = Depends(get_current_user),

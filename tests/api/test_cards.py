@@ -2,8 +2,8 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_create_and_get_cards(client):
-    await client.post("/auth/signup", json={"email": "card_user@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "card_user@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "card_user@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "card_user@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -21,8 +21,8 @@ async def test_create_and_get_cards(client):
 
 @pytest.mark.asyncio
 async def test_create_card_invalid_account(client):
-    await client.post("/auth/signup", json={"email": "card_fail@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "card_fail@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "card_fail@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "card_fail@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

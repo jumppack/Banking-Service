@@ -12,6 +12,8 @@ services:
     volumes:
       # Map the host's data directory to the container to ensure database persistence
       - ./data:/app/data
+      # Map container logs reliably to the host machine for inspection and survival
+      - ./logs:/app/logs
     restart: unless-stopped
 
   frontend:

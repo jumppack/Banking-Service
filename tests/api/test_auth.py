@@ -51,12 +51,12 @@ async def test_access_with_invalid_jwt(client):
 async def test_access_with_expired_jwt(client):
     import jwt
     from datetime import datetime, timedelta, timezone
-    from app.core.security import SECRET_KEY, ALGORITHM
+    from app.core.config import settings
     
     # Create an artificially expired token
     expire = datetime.now(timezone.utc) - timedelta(minutes=15)
     to_encode = {"sub": "expired_user", "exp": expire}
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
     headers = {"Authorization": f"Bearer {encoded_jwt}"}
     import uuid

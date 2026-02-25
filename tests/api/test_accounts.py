@@ -3,8 +3,8 @@ import pytest
 @pytest.mark.asyncio
 async def test_create_and_get_account(client):
     # Step 1: Create user
-    await client.post("/auth/signup", json={"email": "acc_user@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "acc_user@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "acc_user@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "acc_user@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -21,8 +21,8 @@ async def test_create_and_get_account(client):
 @pytest.mark.asyncio
 async def test_get_account_unauthorized(client):
     # Setup poor user
-    await client.post("/auth/signup", json={"email": "acc_user2@test.com", "password": "pw"})
-    login_res = await client.post("/auth/login", data={"username": "acc_user2@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "acc_user2@test.com", "password": "securepw"})
+    login_res = await client.post("/auth/login", data={"username": "acc_user2@test.com", "password": "securepw"})
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
     

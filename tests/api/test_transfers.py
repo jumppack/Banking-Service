@@ -3,8 +3,8 @@ import pytest
 @pytest.mark.asyncio
 async def test_transfer_endpoint(client):
     # Step 1: Create User 1 & Account
-    await client.post("/auth/signup", json={"email": "user1@test.com", "password": "pw"})
-    login1 = await client.post("/auth/login", data={"username": "user1@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "user1@test.com", "password": "securepw"})
+    login1 = await client.post("/auth/login", data={"username": "user1@test.com", "password": "securepw"})
     token1 = login1.json()["access_token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
 
@@ -12,8 +12,8 @@ async def test_transfer_endpoint(client):
     acc1_id = acc1_res.json()["id"]
 
     # Step 2: Create User 2 & Account
-    await client.post("/auth/signup", json={"email": "user2@test.com", "password": "pw"})
-    login2 = await client.post("/auth/login", data={"username": "user2@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "user2@test.com", "password": "securepw"})
+    login2 = await client.post("/auth/login", data={"username": "user2@test.com", "password": "securepw"})
     token2 = login2.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
 
@@ -52,8 +52,8 @@ async def test_transfer_invalid_email(client):
     (Boundary/Negative Test)
     """
     # Create valid user 1
-    await client.post("/auth/signup", json={"email": "valid1@test.com", "password": "pw"})
-    login1 = await client.post("/auth/login", data={"username": "valid1@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "valid1@test.com", "password": "securepw"})
+    login1 = await client.post("/auth/login", data={"username": "valid1@test.com", "password": "securepw"})
     headers = {"Authorization": f"Bearer {login1.json()['access_token']}"}
     acc_res = await client.post("/accounts/", headers=headers, params={"currency": "USD"})
     
@@ -72,13 +72,13 @@ async def test_transfer_insufficient_funds_integration(client):
     Test 400 Bad Request (Overdraft Protection) preventing transferring more than available.
     Ensures the business logic exception violently bubbles up through the router cleanly.
     """
-    await client.post("/auth/signup", json={"email": "poor_user@test.com", "password": "pw"})
-    login1 = await client.post("/auth/login", data={"username": "poor_user@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "poor_user@test.com", "password": "securepw"})
+    login1 = await client.post("/auth/login", data={"username": "poor_user@test.com", "password": "securepw"})
     headers1 = {"Authorization": f"Bearer {login1.json()['access_token']}"}
     acc1_res = await client.post("/accounts/", headers=headers1, params={"currency": "USD"})
 
-    await client.post("/auth/signup", json={"email": "receiver@test.com", "password": "pw"})
-    login2 = await client.post("/auth/login", data={"username": "receiver@test.com", "password": "pw"})
+    await client.post("/auth/signup", json={"email": "receiver@test.com", "password": "securepw"})
+    login2 = await client.post("/auth/login", data={"username": "receiver@test.com", "password": "securepw"})
     headers2 = {"Authorization": f"Bearer {login2.json()['access_token']}"}
     await client.post("/accounts/", headers=headers2, params={"currency": "USD"})
     
