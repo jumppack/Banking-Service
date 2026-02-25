@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
+from app.schemas.common import PositiveAmountMixin
 
 class TransactionBase(BaseModel):
     amount: int = Field(..., description="The transaction amount in cents. Positive indicates a credit, negative indicates a debit.")
@@ -19,8 +20,8 @@ class TransactionResponse(TransactionBase):
     counterparty_name: Optional[str] = Field(default=None, description="The resolved human-readable name of the counterparty, if applicable.")
     model_config = ConfigDict(from_attributes=True)
 
-class TransactionAmountRequest(BaseModel):
-    amount: int = Field(..., gt=0, description="The transaction amount in cents. Must be strictly positive.")
+class TransactionAmountRequest(PositiveAmountMixin):
+    pass
 
 class TransactionPostResponse(BaseModel):
     transaction: TransactionResponse = Field(..., description="The executed transaction record.")
