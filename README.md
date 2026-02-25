@@ -38,6 +38,7 @@ The system enforces the presence of a strong `SECRET_KEY` for JWT signing.
 The Banking Service supports distinct environment definitions out-of-the-box (`development`, `test`, `production`), managed by dedicated template files.
 
 Available Environment Templates:
+- `.env.example` (General-purpose baseline, defaults to development)
 - `.env.development.example`
 - `.env.test.example`
 - `.env.production.example`
