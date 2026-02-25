@@ -22,7 +22,7 @@ To run this application, you must have the following installed on your machine:
 
 ## Configuration / Required Environment Variables
 
-Before starting the backend, you must configure your environment variables. 
+Before starting the backend, you must configure your environment variables.
 The system enforces the presence of a strong `SECRET_KEY` for JWT signing.
 
 1. Copy the example environment file:
@@ -38,6 +38,7 @@ The system enforces the presence of a strong `SECRET_KEY` for JWT signing.
 The Banking Service supports distinct environment definitions out-of-the-box (`development`, `test`, `production`), managed by dedicated template files.
 
 Available Environment Templates:
+
 - `.env.example` (General-purpose baseline, defaults to development)
 - `.env.development.example`
 - `.env.test.example`
@@ -47,27 +48,40 @@ Configurations are dynamically structured using the `ENVIRONMENT` configuration 
 
 ### How to run
 
-1. First, create your configuration from the appropriate environment template:
+**Option 1: Automated Start (Recommended)**
+
+The absolute easiest way to evaluate this application is via the included interactive wrapper script. This script automatically generates your `.env` file (securing the `SECRET_KEY`), builds the images, and starts the containers in detached mode:
+
 ```bash
 # Easiest standard invocation utilizing the deployment script (auto-creates using development template):
 ./start.sh development
 
 # Standard production generation:
 ./start.sh production
+```
+*(Optionally use `.\start.ps1` for Windows PowerShell.)*
 
-# Or manually:
+**Option 2: Native Docker Compose (Manual Setup)**
+
+If you prefer to bypass the wrapper script and manage the environment variables yourself:
+
+1. Create your configuration from the appropriate environment template:
+```bash
 cp .env.production.example .env
 ```
-Ensure you set a unique `SECRET_KEY` inside `.env` before booting. Note: If you use the provided deployment scripts (`start.sh` or `start.ps1`), a cryptographically secure `SECRET_KEY` will be generated and injected for you automatically on any created environment template.
+Ensure you set a unique `SECRET_KEY` inside `.env` before booting.
 
-2. Start the system via Docker (Recommended):
+2. Start the system via Docker:
+
 ```bash
 docker compose up --build
 ```
+
 *Note: The Docker API container will automatically run `alembic upgrade head` on startup before accepting traffic via its built-in entrypoint script, so a clean volume will "just work."*
 
 3. Local Development (Without Docker):
-If running Uvicorn manually locally without Docker, ensure you create the DB tables yourself before starting:
+   If running Uvicorn manually locally without Docker, ensure you create the DB tables yourself before starting:
+
 ```bash
 alembic upgrade head
 uvicorn app.main:app --reload
@@ -77,18 +91,18 @@ uvicorn app.main:app --reload
 
 ## Deployment
 
-The absolute easiest way to evaluate this application is via the included interactive script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data (users, accounts, simulated transaction matrices).
+The absolute easiest way to run this application is via the included interactive script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data (users, accounts, simulated transaction matrices).
 
 *For manual deployment steps, architecture details, and troubleshooting, please see [docs/Deployment.md](docs/Deployment.md).*
 
 **For Mac/Linux:**
 
-1.  Make the script executable: `chmod +x start.sh`
-2.  Run the script: `./start.sh`
+1. Make the script executable: `chmod +x start.sh`
+2. Run the script: `./start.sh`
 
 **For Windows (PowerShell):**
 
-1.  Run the script from your terminal: `.\start.ps1`
+1. Run the script from your terminal: `.\start.ps1`
 
 _Note: The script contains defensive file-existence checks. If `seed_data.py` is missing from the image for any reason, the pipeline will gracefully warn you rather than crashing._
 
@@ -118,7 +132,7 @@ _Coverage includes robust negative testing (e.g., overdrafts, invalid emails, 40
 
 While the API exposes an interactive Swagger UI at `/docs` when running, below is a quick reference for the core REST endpoints.
 
-**Authentication:**  
+**Authentication:**
 Except for `signup` and `login`, all endpoints require a Bearer token. Pass this in the `Authorization` header:
 `Authorization: Bearer <your_jwt_token>`
 
@@ -189,6 +203,7 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
     "amount": 5000
   }
   ```
+
   _(Note: Amounts are heavily enforced as integer cents. e.g., `5000` = $50.00)_
 
 #### Transactions
@@ -209,6 +224,7 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
     "amount": 500
   }
   ```
+
   _(Note: Amounts are heavily enforced as integer cents. e.g., `500` = $5.00)_
 
 #### Statements
@@ -227,7 +243,6 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
 - `GET /health`
 - **Description:** Legacy alias identical to `/ready` for backward compatibility.
 
-
 ## Data Integrity
 
 - **Account Balances**: Enforced to naturally be non-negative directly at the SQLite database constraint level using Alembic `CheckConstraint`.
@@ -242,7 +257,7 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
 
 ## Design Decisions Extract
 
-1.  **Strict Double-Entry Accounting:** In `app/services/transfer_service.py`, money is never generically manipulated. Database transactions create two strict `Transaction` records (a negative debit for the sender, and a positive credit for the receiver) to guarantee mathematical integrity.
-2.  **Legacy Data Compatibility:** The frontend `TransactionHistory.jsx` evaluates ledger rendering based on raw arithmetic (`amount > 0`) rather than semantic string labels. This ensures UI resilience even if anomalous data enters the historical ledger.
-3.  **Entity Resolution over UUIDs:** In Phase 6, the system upgraded transfer routing to natively resolve counterparties by `email` (`to_identifier`) via dynamic database table joins, insulating the React frontend from managing obscure UUID lookups.
-4.  **Security Fail-Safes:** JWT tokens expire automatically after 15 minutes. The frontend implements a global Axios interceptor to catch `401 Unauthorized` responses and defensively purge Chrome's `localStorage` to force re-authentication.
+1. **Strict Double-Entry Accounting:** In `app/services/transfer_service.py`, money is never generically manipulated. Database transactions create two strict `Transaction` records (a negative debit for the sender, and a positive credit for the receiver) to guarantee mathematical integrity.
+2. **Legacy Data Compatibility:** The frontend `TransactionHistory.jsx` evaluates ledger rendering based on raw arithmetic (`amount > 0`) rather than semantic string labels. This ensures UI resilience even if anomalous data enters the historical ledger.
+3. **Entity Resolution over UUIDs:** In Phase 6, the system upgraded transfer routing to natively resolve counterparties by `email` (`to_identifier`) via dynamic database table joins, insulating the React frontend from managing obscure UUID lookups.
+4. **Security Fail-Safes:** JWT tokens expire automatically after 15 minutes. The frontend implements a global Axios interceptor to catch `401 Unauthorized` responses and defensively purge Chrome's `localStorage` to force re-authentication.
