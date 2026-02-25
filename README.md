@@ -132,6 +132,8 @@ _Coverage includes robust negative testing (e.g., overdrafts, invalid emails, 40
 
 While the API exposes an interactive Swagger UI at `/docs` when running, below is a quick reference for the core REST endpoints.
 
+*For a complete mapping of assessment requirements to files, endpoints, and tests, please see [docs/Assessment_Checklist_Mapping.md](docs/Assessment_Checklist_Mapping.md).*
+
 **Authentication:**
 Except for `signup` and `login`, all endpoints require a Bearer token. Pass this in the `Authorization` header:
 `Authorization: Bearer <your_jwt_token>`
