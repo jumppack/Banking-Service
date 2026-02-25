@@ -1,3 +1,4 @@
+
 # Future Considerations & Architectural Evolution
 
 This document outlines the anticipated architectural bottlenecks and proposed system evolutions required to transition this banking service from a local, monolithic MVP to a highly available, globally distributed financial platform.
@@ -27,10 +28,11 @@ To handle thousands of transactions per second (TPS), the system will pivot to a
 * **Message Brokers:** Implementing Apache Kafka or RabbitMQ to decouple the API layer from the transaction processing engine.
 * **Asynchronous Workers:** The API will instantly return a "Transfer Initiated" status (HTTP 202), while background worker nodes process the complex ledger updates, balance checks, and anti-fraud verifications from the queue.
 * **Dead Letter Queues (DLQ):** Implementing DLQs to safely capture and manually review failed transaction events without dropping financial data.
+* **Distributed Tracing:** Implementing OpenTelemetry and Jaeger to inject trace IDs into every request. This ensures that as a transaction moves from the API, into Kafka, and through the worker nodes, we have a complete, visual timeline of the event for rapid debugging.
 
 ---
 
-### 3. AI-Enhanced Security & Intelligent Features
+### 3. AI-Enhanced Security & AI companion in the app
 
 **Current State:** Transaction validation relies on deterministic, rule-based logic (e.g., sufficient balance checks) handled entirely by standard Python services.
 
@@ -39,7 +41,7 @@ Integrating advanced AI system design to elevate both platform security and user
 
 * **Real-Time Fraud Detection:** Deploying machine learning models to analyze transaction velocity, location anomalies, and behavioral patterns in real-time, temporarily freezing suspicious transfers.
 * **Intelligent Transaction Categorization:** Utilizing LLM APIs to automatically enrich and categorize raw vendor strings into clean user-facing categories (e.g., turning "POS DEBIT 1234 SQ *COFFEE" into "Food & Dining").
-* **Automated Support Systems:** Implementing a secure RAG (Retrieval-Augmented Generation) architecture to power a customer service agent capable of securely answering contextual questions about a user's statement history.
+* **Conversational AI Chatbot:** Integrating a secure, LLM-powered chatbot directly into the frontend interface. By utilizing a Retrieval-Augmented Generation (RAG) architecture, this assistant will be securely isolated to query only the active user's transaction history, allowing users to ask complex natural language questions (e.g., "How much did I spend on groceries last month compared to this month?") without exposing PII to public models.
 
 ---
 
@@ -63,5 +65,4 @@ Moving to a highly available, fault-tolerant infrastructure.
 Banking platforms require military-grade security and strict regulatory compliance.
 
 * **Identity Provider Integration:** Migrating from custom user management to an enterprise Identity and Access Management (IAM) provider using OAuth2 and OpenID Connect (OIDC).
-* **Key Management System (KMS):** Utilizing AWS KMS or HashiCorp Vault for dynamic secrets management and database payload encryption (encrypting PII at rest).
-* **Immutable Audit Ledgers:** Creating an append-only, cryptographically verifiable database table specifically for logging all state changes to account balances to comply with financial auditing standards.
+* **Key Management System (KMS):** Utilizing AWS
