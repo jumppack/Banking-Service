@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from app.api.routers import auth, accounts, transfers, transactions, cards, statements
+from app.api.routers import auth, accounts, transfers, transactions, cards, statements, account_holders
 from app.db.session import engine, get_db
 from app.core.logging import setup_logging
 
@@ -53,6 +53,7 @@ app.include_router(transfers.router)
 app.include_router(transactions.router)
 app.include_router(cards.router)
 app.include_router(statements.router)
+app.include_router(account_holders.router)
 
 from fastapi.responses import JSONResponse
 

@@ -95,6 +95,24 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
   }
   ```
 
+#### Account Holders
+
+**Get My Profile**
+
+- `GET /account-holders/me`
+- **Description:** Returns the current authenticated user's profile.
+
+**Update My Profile**
+
+- `PATCH /account-holders/me`
+- **Description:** Updates the current user's profile (email only).
+- **Body:**
+  ```json
+  {
+    "email": "new.email@example.com"
+  }
+  ```
+
 #### Accounts
 
 **Get My Accounts**
