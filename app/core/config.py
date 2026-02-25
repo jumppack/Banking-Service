@@ -1,5 +1,9 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+# We must resolve the environment early to know which .env subset to consume securely
+env_state = os.getenv("ENVIRONMENT", "development")
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Banking Service"
@@ -8,17 +12,18 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     LOG_LEVEL: str = "INFO"
-    ENVIRONMENT: str = "dev"
+    ENVIRONMENT: str = env_state
     
+    # Priority order: OS ENV > .env.{environment} > .env
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", f".env.{env_state}"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if self.SECRET_KEY in {"changeme", "change_me", "supersecretkey"}:
+        if self.SECRET_KEY in {"changeme", "change_me", "supersecretkey", "change_me_to_a_long_random_value"}:
             raise ValueError("SECRET_KEY must be a strong, unique value in production.")
 
 @lru_cache()

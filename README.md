@@ -33,13 +33,31 @@ The system enforces the presence of a strong `SECRET_KEY` for JWT signing.
 
 ---
 
+### Environments / Configuration Files
+
+The Banking Service supports distinct environment definitions out-of-the-box (`development`, `test`, `production`), managed by dedicated template files.
+
+Available Environment Templates:
+- `.env.development.example`
+- `.env.test.example`
+- `.env.production.example`
+
+Configurations are dynamically structured using the `ENVIRONMENT` configuration variable which governs the cascade overrides. The system gracefully evaluates `OS ENV -> .env.{ENVIRONMENT} -> .env` in priority order.
+
 ### How to run
 
-1. First, make a copy of the `.env` override definition:
+1. First, create your configuration from the appropriate environment template:
 ```bash
-cp .env.example .env
+# Easiest standard invocation utilizing the deployment script (auto-creates using development template):
+./start.sh development
+
+# Standard production generation:
+./start.sh production
+
+# Or manually:
+cp .env.production.example .env
 ```
-Ensure you set a unique `SECRET_KEY` inside `.env` before booting. Note: If you use the provided deployment scripts (`start.sh` or `start.ps1`), a cryptographically secure `SECRET_KEY` will be generated and injected for you automatically.
+Ensure you set a unique `SECRET_KEY` inside `.env` before booting. Note: If you use the provided deployment scripts (`start.sh` or `start.ps1`), a cryptographically secure `SECRET_KEY` will be generated and injected for you automatically on any created environment template.
 
 2. Start the system via Docker (Recommended):
 ```bash

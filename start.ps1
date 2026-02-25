@@ -1,3 +1,7 @@
+param (
+    [string]$envTarget = 'development'
+)
+
 $ErrorActionPreference = "Stop"
 
 Write-Host "Starting Banking Service Assessment Environment..."
@@ -10,9 +14,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 2. Build and stand up the environment
+$envTemplate = ".env.$envTarget.example"
+
+if (-Not (Test-Path $envTemplate)) {
+    Write-Host "Error: Template $envTemplate not found. Valid environments: development, test, production." -ForegroundColor Red
+    exit 1
+}
+
 if (-Not (Test-Path ".env")) {
-    Write-Host "Warning: .env file not found. Auto-generating from .env.example..." -ForegroundColor Yellow
-    Copy-Item ".env.example" -Destination ".env"
+    Write-Host "Warning: .env file not found. Auto-generating from $envTemplate..." -ForegroundColor Yellow
+    Copy-Item $envTemplate -Destination ".env"
 }
 
 # Ensure SECRET_KEY is securely populated
