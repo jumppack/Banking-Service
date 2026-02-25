@@ -15,6 +15,48 @@ if (-Not (Test-Path ".env")) {
     Copy-Item ".env.example" -Destination ".env"
 }
 
+# Ensure SECRET_KEY is securely populated
+$envPath = ".env"
+$placeholders = @("changeme", "change_me", "supersecretkey", "change_me_to_a_long_random_value", "")
+$updated = $false
+$foundSecret = $false
+
+$lines = Get-Content $envPath
+$newLines = @()
+
+foreach ($line in $lines) {
+    if ($line -match "^SECRET_KEY=(.*)") {
+        $foundSecret = $true
+        $val = $matches[1].Trim("`"",""'"," ")
+        if ($placeholders -contains $val) {
+            $bytes = New-Object byte[] 48
+            [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+            $newKey = [Convert]::ToBase64String($bytes)
+            $newLines += "SECRET_KEY=$newKey"
+            $updated = $true
+        } else {
+            $newLines += $line
+        }
+    } else {
+        $newLines += $line
+    }
+}
+
+if (-Not $foundSecret) {
+    $bytes = New-Object byte[] 48
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $newKey = [Convert]::ToBase64String($bytes)
+    $newLines += "SECRET_KEY=$newKey"
+    $updated = $true
+}
+
+if ($updated) {
+    Set-Content -Path $envPath -Value $newLines
+    Write-Host "Generated a secure SECRET_KEY in .env" -ForegroundColor Green
+} else {
+    Write-Host "SECRET_KEY already set; leaving as-is"
+}
+
 Write-Host "Building and starting Docker containers in detached mode..."
 docker-compose up -d --build
 

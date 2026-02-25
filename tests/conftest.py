@@ -1,7 +1,11 @@
+import os
 import pytest_asyncio
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+# Set a fallback SECRET_KEY for testing before importing the app
+os.environ.setdefault("SECRET_KEY", "test-secret-key-please-change")
 
 from app.main import app
 from app.db.base import Base
@@ -29,6 +33,10 @@ async def setup_test_db():
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Mock alembic_version table for readiness probes
+        from sqlalchemy import text
+        await conn.execute(text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"))
+        await conn.execute(text("INSERT INTO alembic_version (version_num) VALUES ('test_version')"))
     yield
     # Drop tables after testing is done
     async with engine.begin() as conn:

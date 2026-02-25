@@ -17,6 +17,46 @@ if [ ! -f ".env" ]; then
     cp .env.example .env
 fi
 
+# Ensure SECRET_KEY is securely populated
+python3 -c '
+import os, secrets
+try:
+    with open(".env", "r") as f:
+        lines = f.readlines()
+    
+    placeholders = {"changeme", "change_me", "supersecretkey", "change_me_to_a_long_random_value"}
+    found_secret = False
+    updated = False
+    
+    new_lines = []
+    for line in lines:
+        if line.startswith("SECRET_KEY="):
+            found_secret = True
+            val = line.split("=", 1)[1].strip().strip("\"'\''")
+            if not val or val in placeholders:
+                new_key = secrets.token_urlsafe(48)
+                new_lines.append(f"SECRET_KEY={new_key}\n")
+                updated = True
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+            
+    if not found_secret:
+        new_key = secrets.token_urlsafe(48)
+        new_lines.append(f"\nSECRET_KEY={new_key}\n")
+        updated = True
+        
+    if updated:
+        with open(".env", "w") as f:
+            f.writelines(new_lines)
+        print("Generated a secure SECRET_KEY in .env")
+    else:
+        print("SECRET_KEY already set; leaving as-is")
+except Exception as e:
+    print(f"Error checking SECRET_KEY: {e}")
+'
+
 echo "Building and starting Docker containers in detached mode..."
 docker-compose up -d --build
 

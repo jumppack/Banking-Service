@@ -25,16 +25,8 @@ async def create_account(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    account_number = str(uuid.uuid4().hex)[:10]  # Simple random account number generator
-    new_account = Account(
-        user_id=current_user.id,
-        account_number=account_number,
-        currency=currency,
-        balance=0
-    )
-    session.add(new_account)
-    await session.commit()
-    await session.refresh(new_account)
+    from app.services.account_service import AccountService
+    new_account = await AccountService.create_account(session, current_user.id, currency)
     return new_account
 
 @router.get(

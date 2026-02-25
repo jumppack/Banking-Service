@@ -9,12 +9,21 @@ services:
     environment:
       # Inject the production database string explicitly to override config
       - DATABASE_URL=sqlite+aiosqlite:///./data/banking.db
+      - SECRET_KEY=${SECRET_KEY}
+    env_file:
+      - .env
     volumes:
       # Map the host's data directory to the container to ensure database persistence
       - ./data:/app/data
       # Map container logs reliably to the host machine for inspection and survival
       - ./logs:/app/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; import urllib.error; url='http://localhost:8000/ready'; try: r=urllib.request.urlopen(url, timeout=2); sys.exit(0 if r.status==200 else 1); except Exception: sys.exit(1)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   frontend:
     build:
@@ -24,5 +33,6 @@ services:
     ports:
       - "${FRONTEND_PORT:-8080}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

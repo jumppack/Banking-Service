@@ -36,6 +36,9 @@ COPY app/ /app/app/
 COPY alembic.ini /app/
 COPY alembic/ /app/alembic/
 COPY seed_data.py /app/
+COPY scripts/entrypoint.sh /app/
+
+RUN chmod +x /app/entrypoint.sh
 
 # Run Alembic migrations and start the FastAPI application using Uvicorn
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+ENTRYPOINT ["/app/entrypoint.sh"]

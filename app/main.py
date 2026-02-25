@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from app.api.routers import auth, accounts, transfers, transactions, cards, statements, account_holders
+from app.api.routers import auth, accounts, transfers, transactions, cards, statements, account_holders, health
 from app.db.session import engine, get_db
 from app.core.logging import setup_logging
 
@@ -54,27 +54,62 @@ app.include_router(transactions.router)
 app.include_router(cards.router)
 app.include_router(statements.router)
 app.include_router(account_holders.router)
+app.include_router(health.router)
 
 from fastapi.responses import JSONResponse
+from app.core.error_tracking import get_request_id, new_error_id
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc: Exception):
-    logger.exception(f"Unhandled exception: {exc}")
+    request_id = get_request_id(request)
+    error_id = new_error_id()
+    
+    logger.exception(f"Unhandled exception", extra={
+        "error_id": error_id, 
+        "request_id": request_id, 
+        "path": request.url.path, 
+        "method": request.method
+    })
+    
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error"}
+        content={
+            "detail": "Internal Server Error",
+            "error_id": error_id,
+            "request_id": request_id
+        },
+        headers={"X-Request-ID": request_id}
     )
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc: HTTPException):
+    request_id = get_request_id(request)
+    
     if exc.status_code >= 500:
-        logger.error(f"HTTPException {exc.status_code}: {exc.detail}")
+        error_id = new_error_id()
+        logger.error(f"HTTPException {exc.status_code}: {exc.detail}", extra={
+            "error_id": error_id, 
+            "request_id": request_id,
+            "path": request.url.path, 
+            "method": request.method
+        })
+        content = {"detail": exc.detail, "error_id": error_id, "request_id": request_id}
     else:
-        logger.warning(f"HTTPException {exc.status_code}: {exc.detail}")
+        logger.warning(f"HTTPException {exc.status_code}: {exc.detail}", extra={
+            "request_id": request_id,
+            "path": request.url.path, 
+            "method": request.method
+        })
+        content = {"detail": exc.detail, "request_id": request_id}
+        
+    # Extract headers and inject X-Request-ID
+    headers = getattr(exc, "headers", None) or {}
+    headers["X-Request-ID"] = request_id
+        
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail},
-        headers=getattr(exc, "headers", None)
+        content=content,
+        headers=headers
     )
 
 @app.get("/")
@@ -82,18 +117,6 @@ async def root():
     return {
         "message": "Welcome to the Banking REST Service API",
         "docs_url": "/docs",
-        "health_check": "/health"
+        "live_check": "/live",
+        "ready_check": "/ready"
     }
-
-@app.get("/health")
-async def health_check(session: AsyncSession = Depends(get_db)):
-    try:
-        # Perform a deep health check by querying the database
-        await session.execute(text("SELECT 1"))
-        return {"status": "healthy", "database": "connected"}
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Service is unhealthy or database is unreachable"
-        )

@@ -20,6 +20,42 @@ To run this application, you must have the following installed on your machine:
 
 ---
 
+## Configuration / Required Environment Variables
+
+Before starting the backend, you must configure your environment variables. 
+The system enforces the presence of a strong `SECRET_KEY` for JWT signing.
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Open `.env` and set a secure value for `SECRET_KEY` (do not use "changeme").
+
+---
+
+### How to run
+
+1. First, make a copy of the `.env` override definition:
+```bash
+cp .env.example .env
+```
+Ensure you set a unique `SECRET_KEY` inside `.env` before booting. Note: If you use the provided deployment scripts (`start.sh` or `start.ps1`), a cryptographically secure `SECRET_KEY` will be generated and injected for you automatically.
+
+2. Start the system via Docker (Recommended):
+```bash
+docker compose up --build
+```
+*Note: The Docker API container will automatically run `alembic upgrade head` on startup before accepting traffic via its built-in entrypoint script, so a clean volume will "just work."*
+
+3. Local Development (Without Docker):
+If running Uvicorn manually locally without Docker, ensure you create the DB tables yourself before starting:
+```bash
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+---
+
 ## Deployment
 
 The absolute easiest way to evaluate this application is via the included interactive script. It will automatically build the images, start the containers in the background, and prompt you to inject synthetic testing data (users, accounts, simulated transaction matrices).
@@ -143,6 +179,19 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
 - `GET /accounts/{account_id}/transactions`
 - **Description:** Fetches a paginated ledger of debits and credits for a specific account.
 
+**Transactions (Posting)**
+
+- `POST /accounts/{account_id}/transactions/deposit`
+- `POST /accounts/{account_id}/transactions/withdraw`
+- **Description:** Directly deposits or withdraws funds from an account.
+- **Body:**
+  ```json
+  {
+    "amount": 500
+  }
+  ```
+  _(Note: Amounts are heavily enforced as integer cents. e.g., `500` = $5.00)_
+
 #### Statements
 
 **Generate Statement**
@@ -150,6 +199,25 @@ Except for `signup` and `login`, all endpoints require a Bearer token. Pass this
 - `GET /accounts/{account_id}/statement`
 - **Description:** Generates a summarized financial statement with starting/ending balances.
 
+#### Probes
+
+- `GET /live`
+- **Description:** Liveness probe. Returns 200 OK immediately if the web process is running. Used for restart policies.
+- `GET /ready`
+- **Description:** Readiness probe. Performs a deep check by ensuring database connectivity (SELECT 1) and verifying Alembic database schemas are applied. Used for load balancer rotation.
+- `GET /health`
+- **Description:** Legacy alias identical to `/ready` for backward compatibility.
+
+
+## Data Integrity
+
+- **Account Balances**: Enforced to naturally be non-negative directly at the SQLite database constraint level using Alembic `CheckConstraint`.
+- **Account Generation**: Includes automatic retry loop logic natively built into `AccountService` to handle any alphanumeric collisions transparently.
+
+## Error Tracking and Reporting
+
+- **Traceability**: Every individual HTTP request is assigned a `request_id` (`X-Request-ID` header) which is propagated directly into all internal system logs measuring application performance and errors.
+- **Incident Correlating**: Native `500 Internal Server Errors` return an explicit, uniquely generated `error_id` cleanly mapped to the `request_id`. Engineering can search logs by this exact `error_id` payload to immediately identify the full stack trace causing the specific crash.
 
 ---
 

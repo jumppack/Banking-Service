@@ -18,3 +18,10 @@ class TransactionResponse(TransactionBase):
     related_account_id: Optional[UUID] = Field(default=None, description="The counterparty account ID, if this is part of an internal transfer.")
     counterparty_name: Optional[str] = Field(default=None, description="The resolved human-readable name of the counterparty, if applicable.")
     model_config = ConfigDict(from_attributes=True)
+
+class TransactionAmountRequest(BaseModel):
+    amount: int = Field(..., gt=0, description="The transaction amount in cents. Must be strictly positive.")
+
+class TransactionPostResponse(BaseModel):
+    transaction: TransactionResponse = Field(..., description="The executed transaction record.")
+    balance: int = Field(..., description="The updated account balance in cents.")
