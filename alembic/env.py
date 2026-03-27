@@ -1,6 +1,5 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
@@ -8,10 +7,10 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.db.base import Base
-from app.models.user import User
-from app.models.account import Account
-from app.models.transaction import Transaction
-from app.models.card import Card
+from app.models.user import User  # noqa: F401
+from app.models.account import Account  # noqa: F401
+from app.models.transaction import Transaction  # noqa: F401
+from app.models.card import Card  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

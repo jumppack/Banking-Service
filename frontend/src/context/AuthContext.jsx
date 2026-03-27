@@ -1,6 +1,8 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     // Initialize state directly from localStorage so refresh doesn't flash the login screen

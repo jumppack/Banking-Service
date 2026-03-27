@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { Navigation } from '../components/Navigation';
 import { CardDisplay } from '../components/CardDisplay';
@@ -8,7 +8,7 @@ import { TransferForm } from '../components/TransferForm';
 import { StatementGenerator } from '../components/StatementGenerator';
 
 export const Dashboard = () => {
-    const { user } = useContext(AuthContext);
+    const { user } = useAuth();
     
     // UI State
     const [loading, setLoading] = useState(true);

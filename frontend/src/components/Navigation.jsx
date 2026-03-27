@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { LogOut, User as UserIcon } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export const Navigation = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout } = useAuth();
 
     return (
         <nav className="bg-white shadow-sm border-b border-gray-200">
