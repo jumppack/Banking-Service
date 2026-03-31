@@ -9,6 +9,7 @@ from app.models.account import Account
 from app.schemas.transfer import TransferCreate
 from app.services.transfer_service import TransferService
 import uuid
+from app.api.helpers import get_valid_account
 
 router = APIRouter(prefix="/transfers", tags=["transfers"])
 
@@ -24,15 +25,8 @@ async def create_transfer(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    # Fetch from_account to verify ownership
-    result = await session.execute(select(Account).where(Account.id == transfer_in.from_account_id))
-    from_account = result.scalar_one_or_none()
-    
-    if not from_account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source account not found")
-        
-    if from_account.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to transfer from this account")
+    # Fetch and strictly verify ownership of the source account before proceeding
+    from_account = await get_valid_account(session, transfer_in.from_account_id, current_user.id, "Not authorized to transfer from this account")
         
     to_account_id = None
     try:

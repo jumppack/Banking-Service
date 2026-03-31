@@ -9,6 +9,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.account import Account
 from app.schemas.account import AccountCreate, AccountResponse
+from app.api.helpers import get_valid_account
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -56,13 +57,5 @@ async def get_account(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    result = await session.execute(select(Account).where(Account.id == account_id))
-    account = result.scalar_one_or_none()
-    
-    if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-        
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this account")
-        
+    account = await get_valid_account(session, account_id, current_user.id)
     return account

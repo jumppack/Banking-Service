@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 import uuid
+from app.api.helpers import get_valid_account
 
 from app.db.session import get_db
 from app.core.security import get_current_user
@@ -28,15 +29,7 @@ async def get_transactions(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    # Verify account ownership first
-    result = await session.execute(select(Account).where(Account.id == account_id))
-    account = result.scalar_one_or_none()
-    
-    if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-        
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view transactions for this account")
+    account = await get_valid_account(session, account_id, current_user.id)
         
     try:
         transactions = await AccountService.get_transactions(session, account_id, limit, offset)
@@ -45,14 +38,13 @@ async def get_transactions(
         for tx in transactions:
             counterparty = None
             if tx.related_account_id:
-                # Resolve the linked Account and then the User to get the email
                 acc_result = await session.execute(select(Account).where(Account.id == tx.related_account_id))
                 related_acc = acc_result.scalar_one_or_none()
+                
                 if related_acc:
                     user_result = await session.execute(select(User).where(User.id == related_acc.user_id))
                     related_user = user_result.scalar_one_or_none()
-                    if related_user:
-                        counterparty = related_user.email
+                    counterparty = related_user.email if related_user else None
             
             tx_dict = TransactionResponse.model_validate(tx).model_dump()
             tx_dict["counterparty_name"] = counterparty
@@ -75,14 +67,7 @@ async def deposit(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    result = await session.execute(select(Account).where(Account.id == account_id))
-    account = result.scalar_one_or_none()
-    
-    if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-        
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to deposit into this account")
+    account = await get_valid_account(session, account_id, current_user.id)
         
     try:
         tx, balance = await TransactionService.deposit(session, account_id, request.amount)
@@ -103,14 +88,7 @@ async def withdraw(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    result = await session.execute(select(Account).where(Account.id == account_id))
-    account = result.scalar_one_or_none()
-    
-    if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-        
-    if account.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to withdraw from this account")
+    account = await get_valid_account(session, account_id, current_user.id)
         
     try:
         tx, balance = await TransactionService.withdraw(session, account_id, request.amount)
